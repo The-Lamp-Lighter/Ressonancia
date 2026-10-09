@@ -251,6 +251,7 @@ body.intro.intro-hud #ui{opacity:1}
 code{font:500 15px/1 var(--mono);letter-spacing:.2em}
 .net{font:400 10px/1.3 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:right;max-width:14ch}
 .net.ok{color:#4fd16a}
+.diag{margin:-6px 0 0;font:400 10px/1.4 var(--mono);letter-spacing:.06em;color:var(--mute);word-break:break-word}
 .note{margin:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);font-size:13px;line-height:1.4}
 .mini{padding:7px 11px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--fg);cursor:pointer;font:500 12px/1 var(--display);white-space:nowrap}
 .mini:hover{border-color:var(--fg)}
@@ -402,6 +403,8 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <span class="net" id="rmNet"></span>
     </div>
     <p class="note" id="rmNote" hidden></p>
+    <p class="diag" id="rmDiag"></p>
+    <p class="diag"><button class="mini" id="rmTestBtn" type="button">Testar rede</button> <span id="rmTest"></span></p>
     <div id="rmIdle" class="m-sec" style="display:grid;gap:14px">
       <p class="m-p">Crie uma sala, convide amigos digitando o ID de cada um e corram juntos no jogo do dinossauro. Para ser convidado, passe o seu ID para o dono da sala e deixe este site aberto.</p>
       <div><button class="btn-big" id="rmCreate" type="button">Criar sala</button></div>
@@ -1491,6 +1494,17 @@ function gameDraw(dark){
    O dono da sala roda o mundo (velocidade, batida, obstáculos) e manda para todo mundo; cada jogador cuida do
    próprio dino e avisa quando morre. O ID de cada pessoa é o endereço dela na rede P2P. */
 const PFX='rzdino-';
+/* Servidores de rede para a conexão direta entre jogadores.
+   STUN descobre o endereço público de cada um. TURN retransmite os dados quando as redes bloqueiam a conexão direta
+   (é isso que faz funcionar entre redes diferentes). Para ter o seu próprio TURN grátis, crie uma conta na Metered
+   ou na Cloudflare e cole as credenciais em TURN_EXTRA, no formato {urls:'turn:...',username:'...',credential:'...'}. */
+const TURN_EXTRA=[];
+const ICE=[
+  {urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun.cloudflare.com:3478'},
+  {urls:'turn:eu-0.turn.peerjs.com:3478',username:'peerjs',credential:'peerjsp'},
+  {urls:'turn:us-0.turn.peerjs.com:3478',username:'peerjs',credential:'peerjsp'},
+  {urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp','turns:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}
+].concat(TURN_EXTRA);
 const colCss=c=>`hsl(${(c&&c[0])|0} ${(c&&c[1])|0}% 56%)`;
 function initial(n){return((n||'').trim().charAt(0)||'?').toUpperCase()}
 function randCode(){const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',b=new Uint8Array(6);let s='';
@@ -1532,14 +1546,16 @@ const mpSendHost=m=>{const c=MP.hostConn;if(c&&c.open)try{c.send(m)}catch(e){}};
 function mpConnect(){
   if(MP.peer)return;
   if(typeof Peer==='undefined'){MP.err='A biblioteca de salas não carregou.';roomUI();return}
-  const cfg={debug:0};
+  if(!window.RTCPeerConnection){MP.err='Este navegador bloqueou o WebRTC';roomUI();return}
+  const cfg={debug:0,config:{iceServers:ICE,iceCandidatePoolSize:2}};
   try{const q=(/^(localhost|127\.0\.0\.1|)$/.test(location.hostname))?new URLSearchParams(location.search).get('peerserver'):null;if(q){const a=q.split(':');cfg.host=a[0];cfg.port=+a[1]||9000;cfg.path='/';cfg.secure=false}}catch(e){}
   let pr;
   try{pr=new Peer(PFX+MP.code,cfg)}catch(e){MP.err='Não foi possível abrir o servidor de salas.';roomUI();return}
   MP.peer=pr;
   pr.on('open',()=>{MP.ok=true;MP.err='';MP.tryN=0;roomUI()});
   pr.on('connection',onIncoming);
-  pr.on('disconnected',()=>{MP.ok=false;roomUI();setTimeout(()=>{try{if(MP.peer===pr&&!pr.destroyed)pr.reconnect()}catch(e){}},2500)});
+  const retry=()=>{if(MP.peer!==pr||pr.destroyed||!pr.disconnected)return;try{pr.reconnect()}catch(e){}setTimeout(retry,3500)};
+  pr.on('disconnected',()=>{MP.ok=false;if(!MP.err)MP.err='Reconectando…';roomUI();setTimeout(retry,1500)});
   pr.on('error',err=>{
     const ty=err&&err.type;
     if(ty==='unavailable-id'){
@@ -1552,9 +1568,19 @@ function mpConnect(){
       const m=/peer\s+(\S+)/.exec(err.message||''),id=m?m[1].replace(PFX,''):'';
       const pe=MP.pending.get(id);
       if(pe){pe.state='fail';pe.msg='ID não encontrado. A pessoa precisa estar com o site aberto.';roomUI();setTimeout(()=>{if(MP.pending.get(id)===pe){MP.pending.delete(id);roomUI()}},6000)}
+    }else if(ty==='webrtc'){
+      const m=/(?:to|peer)\s+(rzdino-\S+?)(?:\s|\.|$)/.exec(err.message||''),id=m?m[1].replace(PFX,''):'';
+      const pe=MP.pending.get(id);
+      if(pe&&pe.state==='wait'){pe.state='fail';pe.msg='A conexão direta foi bloqueada pela rede ou pelo navegador de um dos dois.';roomUI();setTimeout(()=>{if(MP.pending.get(id)===pe){MP.pending.delete(id);roomUI()}},9000)}
+      else{MP.note='Falha de conexão direta (WebRTC). '+(err.message||'');roomUI()}
     }else if(ty==='network'||ty==='server-error'||ty==='socket-error'||ty==='socket-closed'){
       MP.ok=false;MP.err='Sem conexão com o servidor de salas.';roomUI();
+    }else if(ty==='browser-incompatible'){
+      MP.ok=false;MP.err='Este navegador não suporta WebRTC';roomUI();
+    }else{
+      MP.note='Erro nas salas: '+ty;roomUI();
     }
+    try{console.warn('[salas]',ty,err&&err.message)}catch(e){}
   });
 }
 function onIncoming(conn){
@@ -1650,8 +1676,26 @@ function mpInvite(raw){
   conn.on('data',d=>onData(conn,d));
   conn.on('close',()=>onGone(conn));
   conn.on('error',()=>onGone(conn));
-  setTimeout(()=>{if(MP.pending.get(code)===pe&&pe.state==='wait'&&!conn.open){pe.state='fail';pe.msg='Sem resposta. Confira o ID.';roomUI();setTimeout(()=>{if(MP.pending.get(code)===pe){MP.pending.delete(code);roomUI()}},5000)}},15000);
+  setTimeout(()=>{if(MP.pending.get(code)===pe&&pe.state==='wait'&&!conn.open){pe.state='fail';pe.msg='Não abriu a conexão em 25 s. A pessoa precisa estar online nesta página, e algumas redes (4G, empresa, escola) bloqueiam. Tente outra rede.';roomUI();setTimeout(()=>{if(MP.pending.get(code)===pe){MP.pending.delete(code);roomUI()}},14000)}},25000);
   roomUI();return '';
+}
+/* teste de rede: mostra se este navegador consegue falar com os servidores STUN/TURN */
+function netTest(){
+  const out=$('#rmTest');
+  if(!window.RTCPeerConnection){out.textContent='WebRTC bloqueado neste navegador.';return}
+  out.textContent='Testando a rede…';
+  const seen={host:0,srflx:0,relay:0};let pc;
+  try{pc=new RTCPeerConnection({iceServers:ICE})}catch(e){out.textContent='Não foi possível testar.';return}
+  const done=()=>{
+    try{pc.close()}catch(e){}
+    const r=seen.relay>0?'retransmissão (TURN) disponível':'sem retransmissão (TURN)';
+    const st=seen.srflx>0?'endereço público encontrado':'sem endereço público';
+    out.textContent='Resultado: '+st+' · '+r+'. '+(seen.relay>0?'Deve conectar entre redes diferentes.':'Entre redes diferentes pode falhar. Tente outra rede ou outro navegador.');
+  };
+  pc.onicecandidate=e=>{if(!e.candidate){done();return}const m=/ typ (host|srflx|relay)/.exec(e.candidate.candidate);if(m)seen[m[1]]++};
+  pc.createDataChannel('t');
+  pc.createOffer().then(o=>pc.setLocalDescription(o)).catch(()=>done());
+  setTimeout(()=>{if(pc.iceGatheringState!=='complete')done()},9000);
 }
 function hostStart(){
   if(!MP.host||MP.phase==='race'||MP.phase==='count')return;
@@ -2139,6 +2183,7 @@ function roomUI(){
   $('#rmName').textContent=Me.name||'Sem nome';
   $('#rmId').textContent=MP.code;
   const net=$('#rmNet');net.textContent=MP.ok?'online':(MP.err||'conectando…');net.className='net'+(MP.ok?' ok':'');
+  $('#rmDiag').textContent='servidor: '+(MP.ok?'conectado':(MP.err||'conectando'))+' · WebRTC: '+(window.RTCPeerConnection?'ok':'bloqueado')+' · sala: '+(MP.room?(MP.host?'dono':'convidado'):'nenhuma');
   const note=$('#rmNote');note.hidden=!MP.note;note.textContent=MP.note||'';
   $('#rmIdle').hidden=MP.room;$('#rmLobby').hidden=!MP.room;
   if(!MP.room){
@@ -2185,6 +2230,7 @@ $('#rmCopy').addEventListener('click',()=>{
   try{navigator.clipboard.writeText(MP.code).then(done,()=>{})}catch(e){}
 });
 $('#rmCreate').addEventListener('click',mpCreate);
+$('#rmTestBtn').addEventListener('click',netTest);
 $('#rmLeave').addEventListener('click',()=>mpLeave(false));
 $('#rmStart').addEventListener('click',hostStart);
 $('#rmInvForm').addEventListener('submit',e=>{
