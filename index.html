@@ -266,6 +266,36 @@ code{font:500 15px/1 var(--mono);letter-spacing:.2em}
 .man kbd{font:500 11px/1 var(--mono);padding:2px 5px;border:1px solid var(--line);border-radius:5px;background:var(--chip)}
 .man .keys{line-height:2}
 .note.lan{font-size:12.5px}
+.pop{position:fixed;right:14px;z-index:14;width:min(380px,calc(100vw - 16px));max-height:calc(100dvh - 90px);overflow:auto;padding:14px;border-radius:18px;border:1px solid var(--line);background:var(--veil-b);
+  backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2);display:grid;gap:12px;align-content:start;animation:mIn .2s ease}
+.pop[hidden]{display:none}
+.pop .m-head h2{font-size:20px}
+.gm-list{display:grid;gap:10px}
+.gcard{position:relative;border:1px solid var(--line);border-radius:14px;background:var(--chip);overflow:hidden;transition:border-color .2s}
+.gcard:hover,.gcard.on{border-color:var(--fg)}
+.gmain{display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:stretch;width:100%;padding:0;border:0;background:none;color:var(--fg);text-align:left;cursor:pointer;font:inherit}
+.gcover{position:relative;display:block;min-height:84px;background:var(--bg)}
+.gcover img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.gsym{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;color:var(--fg);vertical-align:middle}
+.gsym svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6}
+.gsym svg.fill{fill:currentColor;stroke:none}
+.gcover .gsym{position:absolute;left:6px;bottom:6px;background:rgba(10,12,18,.72);color:#ecebe6;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.m-head h2 .gsym{margin-right:8px;border:1px solid var(--line);background:var(--chip);width:34px;height:34px}
+.gtx{display:grid;gap:5px;align-content:center;padding:10px 40px 10px 0;min-width:0}
+.gtx b{font:650 16px/1.1 var(--display);letter-spacing:-.02em}
+.gtx small{font-size:12px;line-height:1.35;color:var(--mute)}
+.gtx .tags{display:flex;gap:5px;flex-wrap:wrap}
+.gtag{font:400 9px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;padding:4px 6px;border:1px solid var(--line);border-radius:6px;color:var(--mute)}
+.gtag.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.ghelp{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--veil-b);color:var(--fg);cursor:pointer;font:600 13px/1 var(--display)}
+.ghelp:hover{border-color:var(--fg)}
+.ht-lead{color:var(--mute);margin-bottom:2px!important}
+.ht-act{margin-top:16px;display:flex;justify-content:flex-end}
+#nbStage{position:fixed;z-index:12;border-radius:18px;border:1px solid var(--line);background:var(--veil-a);overflow:hidden;
+  backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);animation:mIn .25s ease}
+#nbStage[hidden]{display:none}
+#nbFrame{width:100%;height:100%;border:0;display:block;background:transparent}
+@media(max-width:640px){.pop{right:8px}.gmain{grid-template-columns:88px 1fr}}
 #side{position:fixed;top:0;right:0;bottom:0;width:min(370px,100%);z-index:14;display:flex;flex-direction:column;gap:16px;padding:16px;overflow:auto;background:var(--veil-b);border-left:1px solid var(--line);
   -webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);transform:translateX(104%);visibility:hidden;transition:transform .32s cubic-bezier(.2,.8,.2,1),visibility 0s .32s}
 #side.open{transform:none;visibility:visible;transition:transform .32s cubic-bezier(.2,.8,.2,1)}
@@ -367,8 +397,8 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
           <svg id="icPause" viewBox="0 0 16 16"><path d="M5.5 3v10M10.5 3v10"/></svg>
           <svg id="icPlay" viewBox="0 0 16 16" hidden><path d="M5 3l8 5-8 5z"/></svg>
         </button>
-        <button class="ib" id="bGame" aria-label="Ligar ou desligar o jogo do dinossauro" aria-pressed="false" title="Jogo do dinossauro (G)">
-          <svg class="fill" id="icDino" viewBox="0 0 22 24"></svg>
+        <button class="ib" id="bGame" aria-label="Jogos" aria-haspopup="true" aria-expanded="false" aria-pressed="false" title="Jogos (J)">
+          <svg viewBox="0 0 16 16"><path d="M4.6 5h6.8c1.6 0 2.5 1.2 2.9 3.6.3 2-.2 3.2-1.3 3.2-.8 0-1.2-.6-1.8-1.5H4.8c-.6.9-1-.1-1.8 1.5-1.1 0-1.6-1.2-1.3-3.2C2.1 6.2 3 5 4.6 5z"/><path d="M5 7v2.4M3.8 8.2h2.4M10.6 7.6v.1M12 8.8v.1"/></svg>
         </button>
         <button class="ib" id="bSide" aria-label="Fila de músicas" aria-pressed="false" title="Fila de músicas (Q)">
           <svg viewBox="0 0 16 16"><path d="M2 4h8M2 8h8M2 12h4M12.5 12.2V5.4l2.5-.9"/><circle cx="11" cy="12.4" r="1.5"/></svg>
@@ -508,6 +538,23 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
   <div id="capBox" hidden><p class="m-p">A fila fica desativada enquanto você capta o áudio de outra fonte.</p><div style="margin-top:10px"><button class="mini pri" id="capBack" type="button">Voltar para a fila</button></div></div>
   <input type="file" id="qFile" accept="audio/*,.mp3,.wav,.ogg,.flac,.m4a,.aac,.opus" multiple hidden>
 </aside>
+<svg id="icDino" class="fill" viewBox="0 0 22 24" hidden></svg>
+<div id="games" class="pop" role="dialog" aria-label="Jogos" hidden>
+  <header class="m-head"><h2>Jogos</h2>
+    <button class="ib" id="gmClose" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button>
+  </header>
+  <div id="gmList" class="gm-list"></div>
+  <p id="gmNote" class="note" hidden></p>
+</div>
+<div id="howto" class="modal" role="dialog" aria-modal="true" aria-label="Como jogar" hidden>
+  <div class="m-card man">
+    <header class="m-head"><h2><span id="htSym" class="gsym"></span><span id="htTitle"></span></h2>
+      <button class="ib" id="htClose" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button>
+    </header>
+    <div id="htBody"></div>
+  </div>
+</div>
+<div id="nbStage" hidden><iframe id="nbFrame" title="Neon Breach" allow="autoplay; fullscreen" tabindex="0"></iframe></div>
 <div id="manual" class="modal" role="dialog" aria-modal="true" aria-label="Manual do usuário" hidden>
   <div class="m-card man">
     <header class="m-head"><h2>Manual</h2>
@@ -535,7 +582,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
     </ul>
     <h3>Botões do topo</h3>
     <ul>
-      <li><b>Dinossauro:</b> liga e desliga o jogo (tecla G).</li>
+      <li><b>Jogos:</b> abre a lista de jogos (tecla J). Cada um tem um <b>?</b> que ensina a jogar.</li>
       <li><b>Pausa:</b> aparece durante o jogo (tecla P).</li>
       <li><b>Lista:</b> fila de músicas (tecla Q).</li>
       <li><b>Salas:</b> jogo em grupo (veja abaixo).</li>
@@ -547,11 +594,19 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
     <h3>Leituras no topo</h3>
     <p><b>BPM</b> é o ritmo estimado da música (batidas por minuto). <b>Pico</b> é a frequência mais forte no momento, em Hz. A barrinha mostra a intensidade. A interface treme de leve a cada batida.</p>
     <h3>Jogo do dinossauro</h3>
+    <p>Ligue pela lista de Jogos (ou direto pela tecla G).</p>
     <ul>
       <li><b>Pular:</b> Espaço, seta para cima, W ou toque na tela. <b>Abaixar:</b> seta para baixo ou S.</li>
       <li>A velocidade acompanha o BPM da música. Abaixo de 100 BPM o jogo trata como 100, para continuar jogável.</li>
       <li>Sem som tocando, o jogo corre numa velocidade padrão.</li>
       <li>O recorde fica guardado no seu navegador.</li>
+    </ul>
+    <h3>Neon Breach</h3>
+    <ul>
+      <li>Jogo de infiltração vista de cima, com 17 missões. Abra pela lista de Jogos. O fundo fica de vidro, então as ondas continuam aparecendo atrás.</li>
+      <li><b>Mover:</b> WASD ou setas. <b>Furtivo:</b> Shift. <b>Hackear:</b> E. <b>Pausar:</b> Esc. Clique dentro do jogo para ele receber o teclado.</li>
+      <li>Os efeitos sonoros ficam ligados. A música própria do jogo vem desligada, para não brigar com a sua. O botão <b>← Jogos</b> volta à lista.</li>
+      <li>Notas e progresso ficam guardados só neste navegador.</li>
     </ul>
     <h3>Salas (jogo em grupo)</h3>
     <ul>
@@ -573,7 +628,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li><b>Lento:</b> feche outras abas pesadas ou use uma skin mais leve.</li>
     </ul>
     <h3>Atalhos</h3>
-    <p class="keys"><kbd>G</kbd> jogo · <kbd>P</kbd> pausa · <kbd>Espaço</kbd> pular · <kbd>←</kbd><kbd>→</kbd> skins · <kbd>1</kbd>–<kbd>0</kbd> skin · <kbd>M</kbd> mix · <kbd>Q</kbd> fila · <kbd>T</kbd> tema · <kbd>F</kbd> tela cheia · <kbd>H</kbd> ocultar · <kbd>?</kbd> manual · <kbd>Esc</kbd> fechar</p>
+    <p class="keys"><kbd>J</kbd> jogos · <kbd>G</kbd> dinossauro · <kbd>P</kbd> pausa · <kbd>Espaço</kbd> pular · <kbd>←</kbd><kbd>→</kbd> skins · <kbd>1</kbd>–<kbd>0</kbd> skin · <kbd>M</kbd> mix · <kbd>Q</kbd> fila · <kbd>T</kbd> tema · <kbd>F</kbd> tela cheia · <kbd>H</kbd> ocultar · <kbd>?</kbd> manual · <kbd>Esc</kbd> fechar</p>
   </div>
 </div>
 <div id="results" class="modal" role="dialog" aria-modal="true" aria-label="Resultado da corrida" hidden>
@@ -2346,7 +2401,7 @@ function syncGameUI(){
   bP.hidden=!Gm.on||Gm.mp;
   $('#icPause').hidden=paused;$('#icPlay').hidden=!paused;
   bP.setAttribute('aria-label',paused?'Continuar o jogo':'Pausar o jogo');bP.title=paused?'Continuar o jogo (P)':'Pausar o jogo (P)';
-  $('#bGame').setAttribute('aria-pressed',String(Gm.on));
+  $('#bGame').setAttribute('aria-pressed',String(Gm.on||NBG.open));
 }
 function setGame(on){if(!on&&Gm.mp)return;Gm.on=on;if(on)gameReset('ready');Gm.duckKey=Gm.duckPtr=false;syncGameUI()}
 function togglePause(){
@@ -2391,7 +2446,7 @@ const savedTheme=store.get('theme',null);if(savedTheme)root.setAttribute('data-t
 themeIcon();
 mq.addEventListener&&mq.addEventListener('change',themeIcon);
 new MutationObserver(themeIcon).observe(root,{attributes:true,attributeFilter:['data-theme']});
-function toggleTheme(){const n=isDark()?'light':'dark';root.setAttribute('data-theme',n);store.set('theme',n);themeIcon()}
+function toggleTheme(){const n=isDark()?'light':'dark';root.setAttribute('data-theme',n);store.set('theme',n);themeIcon();nbTheme()}
 function fullscreen(){try{if(document.fullscreenElement)document.exitFullscreen();else root.requestFullscreen&&root.requestFullscreen().catch(()=>{})}catch(e){}}
 /* HUD e cursor somem juntos quando o mouse fica parado (modo limpo, tela cheia ou jogo rodando) e voltam ao mexer */
 let peekT=0,lastPX=-9,lastPY=-9;
@@ -2456,7 +2511,7 @@ const TOUR=[
   {line:'Deixe do <b>seu jeito</b>.',sub:'Sensibilidade faz as ondas reagirem mais ou menos ao som. Velocidade acelera ou acalma o movimento.',skin:5,spot:['.sliders','#bCtl'],dur:8},
   {line:'Claro ou <b>escuro</b>?',sub:'O botão do sol troca o tema da página inteira. O atalho é a tecla T.',skin:3,spot:['#bTheme'],dur:6.4},
   {line:'Quer a tela <b>limpa</b>?',sub:'Fique parado e a interface some sozinha, junto com o cursor. Mexa o mouse e ela volta. H esconde tudo e F liga a tela cheia.',skin:9,spot:['#bFull'],dur:9},
-  {line:'Ah, e tem um <b>dinossauro</b> escondido.',sub:'Este botão liga o jogo por cima das ondas. Espaço pula, seta para baixo agacha, P pausa. Os obstáculos chegam no ritmo da música.',skin:6,spot:['#bGame'],dur:10},
+  {line:'Ah, e tem <b>jogos</b> escondidos.',sub:'Este botão abre a lista: o dinossauro, que corre no ritmo da música, e o Neon Breach, de infiltração. Cada um tem um ? que ensina a jogar.',skin:6,spot:['#bGame'],dur:10},
   {line:'E dá para correr com <b>amigos</b>.',sub:'Este botão abre as salas. Você tem um ID só seu. Passe para o dono da sala, ele convida você, cada um escolhe a cor do seu dino e ganha quem for mais longe.',skin:7,spot:['#bRoom'],dur:11},
   {line:'É isso. <b>Bom show</b>.',sub:'Dá para rever esta apresentação pelo botão da casinha, lá em cima.',skin:0}
 ];
@@ -2767,8 +2822,8 @@ function toastSync(){
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!rm.hidden){hideRoom();e.stopPropagation()}},true);
 
 
-$('#bHome').addEventListener('click',openIntro);
-$('#bGame').addEventListener('click',()=>setGame(!Gm.on));
+$('#bHome').addEventListener('click',()=>{nbClose();closeGames();openIntro()});
+$('#bGame').addEventListener('click',()=>toggleGames());
 $('#bPause').addEventListener('click',togglePause);
 document.addEventListener('click',e=>{if(!Gm.on)return;const b=e.target.closest&&e.target.closest('button');if(b)b.blur()});
 document.addEventListener('change',e=>{if(Gm.on&&e.target&&e.target.blur)e.target.blur()});
@@ -2777,7 +2832,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&Gm.state==
 let holdT=0;
 addEventListener('pointerdown',e=>{
   if(!Gm.on||body.classList.contains('intro')||e.button>0)return;
-  if(e.target.closest&&e.target.closest('button,input,select,label,.dock,.top,#side'))return;
+  if(e.target.closest&&e.target.closest('button,input,select,label,.dock,.top,#side,#nbStage,#games'))return;
   gameJump();clearTimeout(holdT);holdT=setTimeout(()=>{Gm.duckPtr=true},240);
 });
 const pointerUp=()=>{clearTimeout(holdT);Gm.duckPtr=false};
@@ -2797,7 +2852,9 @@ addEventListener('keydown',e=>{
   if(!mn.hidden||!rm.hidden||!$('#results').hidden)return;
   if(k==='q'||k==='Q'){toggleSide();return}
   if(e.target&&e.target.closest&&e.target.closest('#side'))return;
-  if(k==='g'||k==='G'){setGame(!Gm.on);return}
+  if(k==='j'||k==='J'){toggleGames();return}
+  if(NBG.open&&!/^[qQtTfFhHjJ?]$/.test(k))return;
+  if(k==='g'||k==='G'){if(NBG.open)nbClose();setGame(!Gm.on);return}
   if(Gm.on){
     if(k===' '||k==='ArrowUp'||k==='w'||k==='W'){e.preventDefault();if(!e.repeat)gameJump();return}
     if(k==='ArrowDown'||k==='s'||k==='S'){e.preventDefault();Gm.duckKey=true;return}
@@ -2813,6 +2870,154 @@ addEventListener('keydown',e=>{
   else if(k==='f'||k==='F')fullscreen();
   else if(k===' '&&source==='file'&&tg!=='BUTTON'){e.preventDefault();if(fileEl)fileEl.paused?fileEl.play().catch(()=>{}):fileEl.pause()}
 });
+
+/* ───────────── jogos: lista, "como jogar" e o quadro do Neon Breach ───────────── */
+const NBG={open:false};
+(function(){
+  const dp=rectsToPath(DINO.head.slice(0,1).concat(DINO.body,[[6,20,3,4],[6,23,5,1],[12,20,3,4],[12,23,5,1]])),dh=rectsToPath([DINO.head[1]]);
+  const svg=s=>'data:image/svg+xml,'+encodeURIComponent(s);
+  /* capas desenhadas em SVG, com a mesma cara nos dois temas */
+  const dinoCover=svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208 156"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#17151f"/><stop offset="1" stop-color="#2a2140"/></linearGradient></defs>
+    <rect width="208" height="156" fill="url(#g)"/><circle cx="160" cy="36" r="14" fill="#ecebe6" opacity=".85"/><circle cx="166" cy="32" r="12" fill="#2a2140"/>
+    <g fill="none" stroke="#ecebe6" stroke-opacity=".35" stroke-width="2"><path d="M0 112h208"/></g>
+    <g fill="#ecebe6" opacity=".9"><path transform="translate(34 60) scale(3.1)" fill-rule="evenodd" d="${dp}${dh}"/></g>
+    <g fill="#ecebe6" opacity=".7"><rect x="132" y="86" width="8" height="26"/><rect x="126" y="94" width="6" height="4"/><rect x="140" y="92" width="6" height="4"/><rect x="126" y="94" width="3" height="10"/><rect x="143" y="92" width="3" height="9"/><rect x="170" y="94" width="7" height="18"/></g>
+    <g stroke="#ecebe6" stroke-opacity=".3"><path d="M10 124h30M70 130h50M150 126h40"/></g></svg>`);
+  const nbCover=svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208 156"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#070a12"/><stop offset="1" stop-color="#0f2236"/></linearGradient>
+    <radialGradient id="c" cx="0" cy="0" r="1" gradientTransform="translate(70 100) rotate(-35) scale(90 60)"><stop offset="0" stop-color="#FFB347" stop-opacity=".6"/><stop offset="1" stop-color="#FFB347" stop-opacity=".03"/></radialGradient></defs>
+    <rect width="208" height="156" fill="url(#g)"/>
+    <g fill="#3FD6FF" opacity=".14">${Array.from({length:60},(_,i)=>`<rect x="${(i%12)*18+6}" y="${Math.floor(i/12)*30+8}" width="2" height="2"/>`).join('')}</g>
+    <path d="M70 100 L150 62 A90 90 0 0 1 140 140 Z" fill="url(#c)"/>
+    <g fill="none" stroke="#3FD6FF" stroke-width="2.2" stroke-linejoin="round"><path d="M14 30h58v38h40V30h82M14 30v96h46M60 126V92h58v34h90M208 92h-52v-30"/><path d="M112 68v24" opacity=".6"/></g>
+    <circle cx="70" cy="100" r="5" fill="#FFB347"/><path d="M70 100l18-7" stroke="#FFB347" stroke-width="2"/>
+    <path d="M30 50l12 5-12 5 3-5z" fill="#3FD6FF"/>
+    <g fill="none" stroke="#5ED99B" stroke-width="2"><path d="M168 56l8 8-8 8-8-8z"/></g>
+    <g fill="none" stroke="#FF9548" stroke-width="2"><path d="M176 112l6 6-6 6-6-6z"/></g></svg>`);
+  const symDino='<svg class="fill" viewBox="0 0 22 24"><path fill-rule="evenodd" d="'+dp+dh+'"/></svg>';
+  const symNb='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 9-9 9-9-9z"/><path d="M12 16V9M9 11.5L12 8.5l3 3"/><path d="M5.2 13.2h4M14.8 10.8h4" opacity=".5"/></svg>';
+  const GAMES=[
+    {id:'dino',name:'Dinossauro',blurb:'Corrida infinita por cima das ondas. Os obstáculos chegam no ritmo da música.',tags:['Solo','Salas com amigos'],cover:dinoCover,sym:symDino,
+      help:[
+        {h:'O jogo',p:'Um dinossauro corre sem parar por cima das ondas. Cactos e aves chegam no ritmo da música: quanto mais rápida a batida, mais rápido o jogo.'},
+        {h:'Controles',ul:['<b>Pular:</b> Espaço, seta para cima, W ou toque na tela.','<b>Abaixar:</b> seta para baixo, S, ou segurar o toque.','<b>Pausar:</b> P ou o botão de pausa no topo.','<b>Recomeçar:</b> Enter ou Espaço depois de perder.','<b>Ligar e desligar direto:</b> tecla G.']},
+        {h:'Velocidade e música',ul:['A velocidade acompanha o BPM (batidas por minuto) da música que toca.','Abaixo de 100 BPM, o jogo trata como 100, para continuar possível de jogar.','Sem som tocando, ele corre em uma velocidade padrão.']},
+        {h:'Recorde',p:'Fica guardado só neste navegador.'},
+        {h:'Com amigos',ul:['Abra <b>Salas</b> (ícone de pessoas no topo), crie uma sala e convide pelo ID.','Todos precisam estar na mesma rede (mesmo Wi-Fi).','Quem morre vira espectador. No fim, aparece o ranking por pontos.']}]},
+    {id:'nb',name:'Neon Breach',blurb:'Infiltração tática vista de cima. Hackeie com as setas e passe pelos cones de visão.',tags:['Solo','17 missões'],cover:nbCover,sym:symNb,
+      help:[
+        {h:'O jogo',p:'Você é um agente invadindo prédios cheios de guardas e câmeras. Há dois modos: <b>Invasão</b> (hackear os terminais e chegar à extração) e <b>Resgate</b> (achar a pessoa, abrir o caminho e escoltá-la até a saída). São 17 missões em 6 níveis de dificuldade.'},
+        {h:'Controles',ul:['<b>Mover:</b> WASD ou setas.','<b>Furtivo:</b> segure Shift. O rastreamento sobe pela metade, mas você anda mais devagar.','<b>Hackear:</b> E, perto de um terminal ou porta trancada.','<b>Pausar:</b> Esc.','<b>Celular:</b> botões na tela (setas, HACK e AGACHAR).','Clique dentro do jogo para ele receber o teclado.']},
+        {h:'O hack',ul:['Aparece uma sequência de setas. Aperte na mesma ordem antes de o tempo acabar.','Errou uma tecla? A sequência recomeça (o relógio não para). Nos níveis altos, errar também custa tempo.','O mundo continua rodando enquanto você hackeia: os guardas seguem patrulhando.','O número em cada alvo é o tamanho da sequência. A cor mostra a dificuldade dele.']},
+        {h:'Ser visto',ul:['Os <b>cones amarelos</b> são o que guardas e câmeras enxergam. Ficar dentro de um enche a barra de <b>Rastreamento</b>.','Quando a barra enche, o alarme dispara: os guardas vêm atrás de você e há um tempo limite para sair.','Guarda que encosta em você captura.','Dica: espere a ronda passar. Todo objetivo tem um ponto onde dá para hackear sem ser visto.']},
+        {h:'Notas',ul:['<b>S · Fantasma:</b> rastro zero, rastreamento baixo, nenhum hack falho.','<b>A · Sombra:</b> rastro zero.','<b>B · Ruído:</b> cumprida sob alarme.','<b>F · Flatline:</b> falhou.','Suas melhores notas ficam guardadas só neste navegador.']},
+        {h:'Som',p:'O jogo tem efeitos sonoros. A trilha própria vem desligada, porque o Ressonância já toca a sua música. Dá para ligar na tela de seleção.'}]}
+  ];
+  const gm=$('#games'),list=$('#gmList'),note=$('#gmNote'),ht=$('#howto');
+  function topEdge(){const t=$('.top');const r=t?t.getBoundingClientRect():null;return Math.round(r?r.bottom:56)}
+  function layout(){
+    const y=topEdge()+8;
+    gm.style.top=y+'px';
+    const st=$('#nbStage'),m=innerWidth<640?8:14;
+    st.style.cssText='top:'+y+'px;left:'+m+'px;right:'+m+'px;bottom:'+m+'px';
+  }
+  function renderGames(){
+    list.replaceChildren();
+    for(const g of GAMES){
+      const on=g.id==='dino'?Gm.on:NBG.open;
+      const card=document.createElement('div');card.className='gcard'+(on?' on':'');
+      const main=document.createElement('button');main.type='button';main.className='gmain';main.dataset.g=g.id;
+      main.setAttribute('aria-label',(on?'Parar ':'Jogar ')+g.name);
+      main.innerHTML='<span class="gcover"><img alt="" src="'+g.cover+'"><span class="gsym">'+g.sym+'</span></span><span class="gtx"><b></b><small></small><span class="tags"></span></span>';
+      main.querySelector('b').textContent=g.name;main.querySelector('small').textContent=g.blurb;
+      const tags=main.querySelector('.tags');
+      if(on){const t=document.createElement('span');t.className='gtag on';t.textContent='Jogando';tags.appendChild(t)}
+      g.tags.forEach(x=>{const t=document.createElement('span');t.className='gtag';t.textContent=x;tags.appendChild(t)});
+      const h=document.createElement('button');h.type='button';h.className='ghelp';h.dataset.g=g.id;h.textContent='?';h.setAttribute('aria-label','Como jogar '+g.name);h.title='Como jogar';
+      card.append(main,h);list.appendChild(card);
+    }
+  }
+  function say_(t){note.textContent=t||'';note.hidden=!t}
+  function openGames(){
+    if(body.classList.contains('intro'))return;
+    rm.hidden=true;mn.hidden=true;toggleSide&&toggleSide(false);
+    layout();renderGames();say_('');gm.hidden=false;$('#bGame').setAttribute('aria-expanded','true');wake();
+    try{list.querySelector('.gmain').focus({preventScroll:true})}catch(e){}
+  }
+  function closeGames(){gm.hidden=true;$('#bGame').setAttribute('aria-expanded','false')}
+  window.openGames=openGames;window.closeGames=closeGames;
+  window.toggleGames=()=>gm.hidden?openGames():closeGames();
+  /* quadro do Neon Breach: vidro semitransparente por cima das ondas */
+  function nbTheme(){
+    const f=$('#nbFrame');if(!f||!f.contentWindow||!NBG.open)return;
+    const cs=getComputedStyle(root),vars={};
+    ['--bg','--fg','--mute','--line','--panel','--chip','--accent','--veil-a','--veil-b','--dim','--display','--mono'].forEach(k=>{vars[k]=cs.getPropertyValue(k).trim()});
+    try{f.contentWindow.postMessage({rz:'theme',vars,dark:isDark()},'*')}catch(e){}
+  }
+  function nbOpen(){
+    if(MP.race||MP.phase==='count'||Gm.mp){say_('Termine a corrida em sala antes de abrir outro jogo.');return}
+    if(Gm.on)setGame(false);
+    closeGames();
+    const st=$('#nbStage'),f=$('#nbFrame');
+    layout();st.hidden=false;NBG.open=true;
+    f.onload=()=>{try{f.contentWindow.focus()}catch(e){}};
+    f.src='neonbreach/index.html?t='+(isDark()?'dark':'light');
+    syncGameUI();wake();
+  }
+  function nbClose(){
+    if(!NBG.open)return;
+    const f=$('#nbFrame');NBG.open=false;$('#nbStage').hidden=true;f.onload=null;f.src='about:blank';
+    syncGameUI();
+  }
+  window.nbOpen=nbOpen;window.nbClose=nbClose;window.nbTheme=nbTheme;window.nbLayout=layout;
+  function play(id){
+    if(id==='dino'){
+      if(NBG.open)nbClose();
+      if(Gm.on){if(!Gm.mp)setGame(false)}else setGame(true);
+      closeGames();
+    }else{if(NBG.open){closeGames();return}nbOpen()}
+  }
+  list.addEventListener('click',e=>{
+    const h=e.target.closest('.ghelp');if(h){openHelp(h.dataset.g);return}
+    const m=e.target.closest('.gmain');if(m)play(m.dataset.g);
+  });
+  function openHelp(id){
+    const g=GAMES.find(x=>x.id===id);if(!g)return;
+    $('#htTitle').textContent=g.name;$('#htSym').innerHTML=g.sym;
+    const b=$('#htBody');b.replaceChildren();
+    const lead=document.createElement('p');lead.className='ht-lead';lead.textContent=g.blurb;b.appendChild(lead);
+    for(const s of g.help){
+      const h=document.createElement('h3');h.textContent=s.h;b.appendChild(h);
+      if(s.p){const p=document.createElement('p');p.innerHTML=s.p;b.appendChild(p)}
+      if(s.ul){const u=document.createElement('ul');s.ul.forEach(x=>{const l=document.createElement('li');l.innerHTML=x;u.appendChild(l)});b.appendChild(u)}
+    }
+    const row=document.createElement('div');row.className='ht-act';
+    const pb=document.createElement('button');pb.type='button';pb.className='mini pri';pb.textContent=(id==='dino'&&Gm.on)?'Voltar ao jogo':'Jogar agora';
+    pb.addEventListener('click',()=>{ht.hidden=true;if(!(id==='dino'&&Gm.on))play(id);else closeGames()});row.appendChild(pb);b.appendChild(row);
+    ht.hidden=false;ht.querySelector('.m-card').scrollTop=0;
+  }
+  $('#htClose').addEventListener('click',()=>{ht.hidden=true});
+  ht.addEventListener('click',e=>{if(e.target===ht)ht.hidden=true});
+  $('#gmClose').addEventListener('click',closeGames);
+  /* mensagens vindas do jogo (só aceitas do nosso quadro) */
+  addEventListener('message',e=>{
+    const f=$('#nbFrame'),d=e.data;
+    if(!d||typeof d!=='object'||!f||e.source!==f.contentWindow)return;
+    if(d.nb==='ready')nbTheme();
+    else if(d.nb==='exit'){nbClose();openGames()}
+  });
+  addEventListener('resize',()=>{if(NBG.open||!gm.hidden)layout()});
+  /* fecha com Esc (quadro do jogo recebe o Esc dele mesmo) */
+  addEventListener('keydown',e=>{
+    if(e.key!=='Escape')return;
+    if(!ht.hidden){ht.hidden=true;e.stopPropagation();return}
+    if(!gm.hidden){closeGames();e.stopPropagation()}
+  },true);
+  document.addEventListener('pointerdown',e=>{
+    if(gm.hidden)return;
+    if(e.target.closest('#games,#bGame,#howto'))return;
+    closeGames();
+  },true);
+})();
 
 body.classList.add('intro');syncGameUI();
 resetIntro();
