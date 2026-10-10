@@ -268,10 +268,55 @@
     }
     return { s, fits, tx, ty, sx, sy, ox: sx - tx * s, oy: sy - ty * s };
   }
+  /* paredes em degradê: forte junto do chão e some com a distância, até se misturar com o fundo (nada de bloco sólido) */
+  const WF_R = 4;
+  function wallFade(ctx, m, s, col, x0, y0, x1, y1) {
+    const key = SC.pal.wall;
+    let c = m._wf;
+    if (!c || c.key !== key) {
+      const W = m.W, H = m.H, dist = new Int8Array(W * H).fill(-1), q = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (m.grid[y][x] !== '#') { dist[y * W + x] = 0; q.push(x, y); }
+      for (let i = 0; i < q.length; i += 2) {
+        const x = q[i], y = q[i + 1], d = dist[y * W + x];
+        if (d >= WF_R + 1) continue;
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (nx < 0 || ny < 0 || nx >= W || ny >= H || dist[ny * W + nx] >= 0) continue;
+          dist[ny * W + nx] = d + 1; q.push(nx, ny);
+        }
+      }
+      const mm = /rgba?\(([^)]+)\)/.exec(key) || [0, '19,27,43,.9'], pr = mm[1].split(',').map(Number), base = pr.length > 3 ? pr[3] : 1;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const g = cv.getContext('2d'), im = g.createImageData(W, H);
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const dots = [];
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        const d = dist[y * W + x], i = (y * W + x) * 4;
+        if (m.grid[y][x] !== '#' || d < 1 || d > WF_R) continue;
+        const bd = Math.min(x, y, W - 1 - x, H - 1 - y), a = Math.pow(1 - (d - 1) / WF_R, 1.5) * Math.min(1, (bd + 0.6) / 3);
+        im.data[i] = pr[0]; im.data[i + 1] = pr[1]; im.data[i + 2] = pr[2]; im.data[i + 3] = Math.round(255 * base * a);
+        for (let k = 0; k < 5; k++) if (rnd() < a * a * 0.9) dots.push([x + rnd(), y + rnd(), a]);
+      }
+      g.putImageData(im, 0, 0);
+      c = m._wf = { key, cv, dots };
+    }
+    ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(c.cv, 0, 0, m.W * s, m.H * s);
+    ctx.restore();
+    /* pontinhos de "pixel" que rarefazem para fora, o toque computadorizado */
+    ctx.fillStyle = col; const ds = Math.max(1.5, s * 0.05);
+    for (const d of c.dots) {
+      const tx = Math.floor(d[0]), ty = Math.floor(d[1]);
+      if (tx < x0 || tx > x1 || ty < y0 || ty > y1) continue;
+      ctx.globalAlpha = 0.28 * d[2]; ctx.fillRect(d[0] * s, d[1] * s, ds, ds);
+    }
+    ctx.globalAlpha = 1;
+  }
   function drawMap(ctx, m, s, col, thin, r) {
     const x0 = r ? r.x0 : 0, y0 = r ? r.y0 : 0, x1 = r ? r.x1 : m.W - 1, y1 = r ? r.y1 : m.H - 1;
     ctx.shadowBlur = 0; ctx.fillStyle = SC.pal.wall;
-    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.grid[y][x] === '#') ctx.fillRect(x * s, y * s, s + 0.5, s + 0.5);
+    if (thin) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.grid[y][x] === '#') ctx.fillRect(x * s, y * s, s + 0.5, s + 0.5); }
+    else wallFade(ctx, m, s, col, x0, y0, x1, y1);
     ctx.strokeStyle = col; ctx.lineWidth = thin ? 1 : 1.6; ctx.beginPath();
     const isW = (x, y) => x < 0 || y < 0 || x >= m.W || y >= m.H || m.grid[y][x] === '#';
     for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (!isW(x, y)) {

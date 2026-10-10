@@ -82,6 +82,17 @@ body.intro #ui>*{pointer-events:none}
 .row-chips{display:flex;gap:10px;align-items:center;min-width:0}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding:1px}
 .chips::-webkit-scrollbar{display:none}
+.chips{cursor:grab;overscroll-behavior-x:contain;-webkit-mask-image:linear-gradient(90deg,transparent,#000 var(--fl,0px),#000 calc(100% - var(--fr,0px)),transparent);mask-image:linear-gradient(90deg,transparent,#000 var(--fl,0px),#000 calc(100% - var(--fr,0px)),transparent)}
+.chips.drag{cursor:grabbing}.chips.drag .chip{pointer-events:none}
+#skGrid{padding:7px 10px;color:var(--mute)}#skGrid:hover{color:var(--fg)}
+.sk-card{width:min(720px,100%)}
+.sk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.sk-tile{display:grid;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--chip);cursor:pointer;padding:0;color:var(--fg);text-align:left;font:inherit}
+.sk-tile:hover{border-color:var(--fg)}.sk-tile.on{border-color:var(--fg);box-shadow:0 0 0 1px var(--fg)}
+.sk-tile canvas{width:100%;aspect-ratio:8/5;display:block;background:var(--bg)}
+.sk-tile span{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;font-size:12.5px}
+.sk-tile em{font:400 9.5px/1 var(--mono);color:var(--mute);font-style:normal;letter-spacing:.06em}
+@media(max-width:560px){.sk-grid{grid-template-columns:repeat(2,1fr)}}
 .chip{flex:none;display:flex;align-items:center;gap:8px;padding:7px 10px 7px 8px;border:1px solid var(--line);background:var(--chip);border-radius:8px;cursor:pointer;font-size:12.5px;white-space:nowrap}
 .chip i{width:14px;height:14px;border-radius:50%;background:var(--sw);display:block;box-shadow:inset 0 0 0 1px rgba(128,128,128,.25)}
 .chip em{font:400 9.5px/1 var(--mono);color:var(--mute);font-style:normal;letter-spacing:.06em}
@@ -439,6 +450,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
   <section class="dock" id="dock" aria-label="Controles">
     <div class="row-chips">
       <div class="chips" id="chips" role="group" aria-label="Skins das ondas"></div>
+      <button class="chip" id="skGrid" type="button" aria-label="Ver todas as skins" title="Ver todas as skins" aria-haspopup="dialog"><svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><circle cx="3" cy="8" r="1.5"/><circle cx="8" cy="8" r="1.5"/><circle cx="13" cy="8" r="1.5"/></svg></button>
       <button class="toggle" id="bCtl" aria-expanded="true" aria-controls="ctrl">Controles
         <svg viewBox="0 0 10 10"><path d="M1.5 6.5 5 3l3.5 3.5"/></svg>
       </button>
@@ -563,6 +575,14 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
   </div>
 </div>
 <div id="nbStage" hidden><iframe id="nbFrame" title="Neon Breach" allow="autoplay; fullscreen" tabindex="0"></iframe></div>
+<div id="skins" class="modal" role="dialog" aria-modal="true" aria-label="Todas as skins" hidden>
+  <div class="m-card sk-card">
+    <header class="m-head"><h2>Skins</h2>
+      <button class="ib" id="skClose" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button>
+    </header>
+    <div id="skList" class="sk-grid"></div>
+  </div>
+</div>
 <div id="manual" class="modal" role="dialog" aria-modal="true" aria-label="Manual do usuário" hidden>
   <div class="m-card man">
     <header class="m-head"><h2>Manual</h2>
@@ -578,7 +598,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li><b>Demo:</b> três músicas próprias, geradas no navegador, para testar sem precisar de nada.</li>
     </ul>
     <h3>Skins e Mix</h3>
-    <p>São 10 estilos visuais. Troque pelas bolinhas ou chips da parte de baixo, pelas setas ← → ou pelas teclas 1 a 0. O <b>Mix</b> (tecla M) troca de skin sozinho a cada 14 segundos, com transição suave. Escolher uma skin manualmente desliga o Mix.</p>
+    <p>São 17 estilos visuais. Troque pelos chips da parte de baixo (role para o lado com a roda do mouse, arrastando ou com o dedo; os três pontinhos ao lado abrem a galeria com miniaturas), pelas setas ← → ou pelas teclas 1 a 0. O <b>Mix</b> (tecla M) troca de skin sozinho a cada 14 segundos, com transição suave. Escolher uma skin manualmente desliga o Mix.</p>
     <h3>Fila de músicas (barra lateral)</h3>
     <ul>
       <li>O botão de lista no topo (tecla <b>Q</b>) abre a barra lateral. Ela mostra a capa, o nome e os controles: anterior, voltar 10 s, tocar/pausar, avançar 10 s, próxima, barra de posição e volume.</li>
@@ -1931,26 +1951,73 @@ const EXZ=[
 ];
 const ex={bn:-1,lt:-1,col:0,ct:0,lv:0,mx:.2,gap:0,slot:[null,null,null],bg:exRGB(exCol[0][0])};
 const exs=x=>x*x*(3-2*x);
+/* contorno de cada caractere: rasteriza uma vez, acha as bordas e vira polígonos (com furos) para poder extrudar de verdade */
+const exCont={};
+function exContour(ch){
+  if(exCont[ch])return exCont[ch];
+  const S=170,N=Math.ceil(S*1.5),c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d',{willReadFrequently:true});
+  x.font=`800 ${S}px "Bricolage Grotesque",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillStyle='#000';x.fillText(ch,N/2,N/2);
+  const d=x.getImageData(0,0,N,N).data,on=(i,j)=>i>=0&&j>=0&&i<N&&j<N&&d[(j*N+i)*4+3]>127;
+  const E=[],from=new Map(),key=(i,j)=>j*(N+2)+i;
+  const add=(a,b,e,f)=>{const id=E.length;E.push([a,b,e,f,false]);const k=key(a,b);(from.get(k)||from.set(k,[]).get(k)).push(id)};
+  let x0=1e9,x1=-1,y0=1e9,y1=-1;
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){
+    if(!on(i,j))continue;if(i<x0)x0=i;if(i>x1)x1=i;if(j<y0)y0=j;if(j>y1)y1=j;
+    if(!on(i,j-1))add(i,j,i+1,j);if(!on(i+1,j))add(i+1,j,i+1,j+1);if(!on(i,j+1))add(i+1,j+1,i,j+1);if(!on(i-1,j))add(i,j+1,i,j);
+  }
+  const cx=(x0+x1+1)/2,cy=(y0+y1+1)/2,loops=[];
+  for(let s=0;s<E.length;s++){
+    if(E[s][4])continue;const pts=[];let e=E[s];
+    for(let g=0;g<100000;g++){
+      e[4]=true;pts.push([e[0]-cx,e[1]-cy]);
+      const nx=from.get(key(e[2],e[3]));let nxt=null;if(nx)for(const id of nx)if(!E[id][4]){nxt=E[id];break}
+      if(!nxt)break;e=nxt;
+    }
+    if(pts.length>8)loops.push(exSimp(pts));
+  }
+  return exCont[ch]={loops,S};
+}
+function exSimp(p){
+  /* tira pontos alinhados e depois Douglas-Peucker num laço fechado */
+  const q=[];for(let i=0;i<p.length;i++){const a=p[(i+p.length-1)%p.length],b=p[i],c=p[(i+1)%p.length];if((b[0]-a[0])*(c[1]-b[1])-(b[1]-a[1])*(c[0]-b[0])!==0)q.push(b)}
+  if(q.length<4)return q;
+  const dp=(a,b,pts,out,eps)=>{let m=-1,mi=-1;const ax=pts[a][0],ay=pts[a][1],bx=pts[b][0],by=pts[b][1],L=Math.hypot(bx-ax,by-ay)||1;
+    for(let i=a+1;i<b;i++){const dd=Math.abs((bx-ax)*(ay-pts[i][1])-(ax-pts[i][0])*(by-ay))/L;if(dd>m){m=dd;mi=i}}
+    if(m>eps){dp(a,mi,pts,out,eps);out.push(pts[mi]);dp(mi,b,pts,out,eps)}};
+  const h=q.length>>1,r1=[q[0]],r2=[q[h]];dp(0,h,q,r1,1.1);r1.push(q[h]);const q2=q.slice(h).concat([q[0]]);dp(0,q2.length-1,q2,r2,1.1);
+  return r1.concat(r2);
+}
+/* faces isométricas: o eixo da extrusão decide qual lado do cubo a letra é */
 function exSprite(ch,size,o){
-  const L=size*1.5,pad=size*.2,ox=o[0],oy=o[1];
-  const W=Math.ceil(size*1.2+pad*2+L*Math.abs(ox)),H=Math.ceil(size*1.2+pad*2+L*Math.abs(oy));
-  const ax=pad+size*.6+(ox<0?L*-ox:0),ay=pad+size*.6+(oy<0?L*-oy:0);
+  const ct=exContour(ch),sc=size/ct.S,L=Math.hypot(o[0],o[1]);
+  let M;if(Math.abs(o[0])<.01)M=[.866,-.5,.866,.5];else if(o[0]*o[1]>0)M=[.866,-.5,0,1];else M=[.866,.5,0,1];
+  const D=size*1.25,dv=[o[0]/L*D,o[1]/L*D],T=p=>[(M[0]*p[0]+M[2]*p[1])*sc,(M[1]*p[0]+M[3]*p[1])*sc];
+  const loops=ct.loops.map(l=>l.map(T));
+  let mnx=1e9,mny=1e9,mxx=-1e9,mxy=-1e9;
+  for(const l of loops)for(const p of l){mnx=Math.min(mnx,p[0],p[0]+dv[0]);mxx=Math.max(mxx,p[0],p[0]+dv[0]);mny=Math.min(mny,p[1],p[1]+dv[1]);mxy=Math.max(mxy,p[1],p[1]+dv[1])}
+  const pad=6,W=Math.ceil(mxx-mnx+pad*2),H=Math.ceil(mxy-mny+pad*2),ax=-mnx+pad,ay=-mny+pad;
   const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
-  x.font=`800 ${size}px "Bricolage Grotesque",sans-serif`;x.textAlign='center';x.textBaseline='middle';
-  const sh=ox?oy/ox:0,N=Math.ceil(L/1.4);
-  const put=(px,py)=>{x.save();x.translate(px,py);x.transform(1,sh,0,1,0,0);x.fillText(ch,0,0);x.restore()};
-  x.fillStyle='rgb(232,232,236)';
-  for(let i=N;i>=1;i--){const q=i/N;put(ax+ox*L*q,ay+oy*L*q)}
+  const Lg=[-.55,-.83],walls=[];
+  ct.loops.forEach((l,li)=>{const tl=loops[li];for(let i=0;i<l.length;i++){const j=(i+1)%l.length,ex=l[j][0]-l[i][0],ey=l[j][1]-l[i][1],ln=Math.hypot(ex,ey)||1,n=[ey/ln,-ex/ln];
+    const sx=tl[j][0]-tl[i][0],sy=tl[j][1]-tl[i][1];
+    if((sy*o[0]-sx*o[1])*1>0===false)continue;           /* só as paredes viradas para o lado da extrusão aparecem */
+    walls.push({a:tl[i],b:tl[j],sh:.5+.5*(n[0]*Lg[0]+n[1]*Lg[1]),k:(tl[i][0]+tl[j][0])*o[0]+(tl[i][1]+tl[j][1])*o[1]})}});
+  walls.sort((p,q)=>p.k-q.k);
+  for(const w of walls){
+    const v=Math.round(186+62*w.sh);x.fillStyle=x.strokeStyle=`rgb(${v},${v},${v+8})`;
+    x.beginPath();x.moveTo(ax+w.a[0],ay+w.a[1]);x.lineTo(ax+w.b[0],ay+w.b[1]);x.lineTo(ax+w.b[0]+dv[0],ay+w.b[1]+dv[1]);x.lineTo(ax+w.a[0]+dv[0],ay+w.a[1]+dv[1]);x.closePath();x.fill();x.lineWidth=.8;x.stroke();
+  }
   x.globalCompositeOperation='destination-in';
-  const gr=x.createLinearGradient(ax,ay,ax+ox*(L+size*.2),ay+oy*(L+size*.2));
-  gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(.2,'rgba(0,0,0,.9)');gr.addColorStop(1,'rgba(0,0,0,0)');
+  const gr=x.createLinearGradient(ax,ay,ax+dv[0],ay+dv[1]);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(.25,'rgba(0,0,0,.85)');gr.addColorStop(1,'rgba(0,0,0,0)');
   x.fillStyle=gr;x.fillRect(0,0,W,H);
-  x.globalCompositeOperation='source-over';x.fillStyle='rgb(252,252,255)';put(ax,ay);
+  x.globalCompositeOperation='source-over';
+  x.beginPath();for(const l of loops){l.forEach((p,i)=>i?x.lineTo(ax+p[0],ay+p[1]):x.moveTo(ax+p[0],ay+p[1]));x.closePath()}
+  x.fillStyle='rgb(252,252,255)';x.fill('evenodd');
   return{c,ax,ay};
 }
 function exSpawn(z,rel,w,Hv,size){
-  const zz=EXZ[z],o=zz.o[(Math.random()*3)|0],ch=EXCH[(Math.random()*EXCH.length)|0],sp=exSprite(ch,size,o);
-  ex.slot[z]={sp,o,x:zz.x*w,y:zz.y*Hv,t:0,size,life:lerp(7,3,clamp(rel*1.2-.15,0,1))*(.92+Math.random()*.16)};
+  const zz=EXZ[z],o=zz.o[(Math.random()*3)|0];let ch;do{ch=EXCH[(Math.random()*EXCH.length)|0]}while(ex.slot.some(s=>s&&s.ch===ch));const sp=exSprite(ch,size,o);
+  ex.slot[z]={ch,sp,o,x:zz.x*w,y:zz.y*Hv,t:0,size,life:lerp(7,3,clamp(rel*1.2-.15,0,1))*(.92+Math.random()*.16)};
 }
 skin('Extrusão','linear-gradient(135deg,#8f7fd0,#7fc8b0)',(g,w,h,dark,F)=>{
   const u=F.u,t=A.t,Hv=Math.max(220,F.cy*2),size=Math.min(Hv*.46,u*.5,w*.34);
@@ -3190,7 +3257,7 @@ addEventListener('keydown',e=>{
   const k=e.key;
   if(body.classList.contains('intro')){introKey(e);return}
   if(k==='?'){toggleManual();return}
-  if(!mn.hidden||!rm.hidden||!$('#results').hidden)return;
+  if(!mn.hidden||!rm.hidden||!$('#results').hidden||!$('#skins').hidden)return;
   if(k==='q'||k==='Q'){toggleSide();return}
   if(e.target&&e.target.closest&&e.target.closest('#side'))return;
   if(k==='j'||k==='J'){toggleGames();return}
@@ -3368,6 +3435,52 @@ const NBG={open:false};
     if(e.target.closest('#games,#bGame,#howto'))return;
     closeGames();
   },true);
+})();
+
+
+/* ───────────── rolagem lateral das skins e galeria com miniaturas ───────────── */
+(function(){
+  const el=chipsEl;
+  const edge=()=>{const l=el.scrollLeft>2,r=el.scrollLeft<el.scrollWidth-el.clientWidth-2;el.style.setProperty('--fl',l?'28px':'0px');el.style.setProperty('--fr',r?'28px':'0px')};
+  el.addEventListener('scroll',edge,{passive:true});addEventListener('resize',edge);setTimeout(edge,50);setTimeout(edge,600);
+  el.addEventListener('wheel',e=>{if(el.scrollWidth<=el.clientWidth)return;const d=Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY;el.scrollLeft+=d;e.preventDefault()},{passive:false});
+  let down=false,sx=0,sl=0,moved=false;
+  el.addEventListener('pointerdown',e=>{if(e.pointerType==='touch'||e.button!==0)return;down=true;moved=false;sx=e.clientX;sl=el.scrollLeft});
+  addEventListener('pointermove',e=>{if(!down)return;const dx=e.clientX-sx;if(!moved&&Math.abs(dx)>5){moved=true;el.classList.add('drag')}if(moved)el.scrollLeft=sl-dx});
+  const up=()=>{if(!down)return;down=false;if(moved)setTimeout(()=>el.classList.remove('drag'),0)};
+  addEventListener('pointerup',up);addEventListener('pointercancel',up);
+  /* galeria */
+  const md=$('#skins'),list=$('#skList');
+  function thumb(i,cv){
+    const w=cv.width=320,h=cv.height=200,x=cv.getContext('2d'),dark=isDark();
+    const F2={cx:w/2,cy:h/2,u:F.u*(w/Math.max(300,innerWidth+48)),dt:.016},nm=SK[i].name;
+    x.setTransform(1,0,0,1,0,0);x.globalAlpha=1;x.globalCompositeOperation='source-over';
+    if(nm==='Extrusão'){for(let z=0;z<3;z++){exSpawn(z,.9,w,h,Math.min(h*.46,w*.34));if(ex.slot[z])ex.slot[z].t=.5}}
+    if(nm==='Código'){for(let k=0;k<7;k++)cgSpawn(w,h,F2.u,CG[(Math.random()*CG.length)|0],Math.random()*360,false);for(const p of cg.p)p.t=.35}
+    try{SK[i].fn(x,w,h,dark,F2)}catch(e){}
+    x.globalAlpha=1;x.globalCompositeOperation='source-over';x.setLineDash([]);x.shadowBlur=0;
+  }
+  function openSk(){
+    if(body.classList.contains('intro'))return;
+    rm.hidden=true;mn.hidden=true;if(typeof closeGames==='function')closeGames();
+    const q=Voz.q;Voz.q=[];const sc={p:cg.p,lt:cg.lt},se={s:ex.slot,lt:ex.lt,gap:ex.gap};
+    cg.p=[];ex.slot=[null,null,null];
+    list.replaceChildren();
+    SK.forEach((s,i)=>{
+      const b=document.createElement('button');b.type='button';b.className='sk-tile'+(i===cur&&!mix?' on':'');
+      const cv=document.createElement('canvas'),sp=document.createElement('span'),n=document.createElement('b'),m=document.createElement('em');
+      n.textContent=s.name;n.style.fontWeight='600';m.textContent=String(i+1).padStart(2,'0');sp.append(n,m);b.append(cv,sp);
+      b.addEventListener('click',()=>{setMix(false);pick(i);md.hidden=true});list.appendChild(b);
+      thumb(i,cv);cg.p=[];ex.slot=[null,null,null];hg.blk=[];
+    });
+    Voz.q=q;cg.p=sc.p;cg.lt=-1;ex.slot=se.s;ex.lt=-1;ex.gap=se.gap;
+    md.hidden=false;md.querySelector('.m-card').scrollTop=0;
+    const on=list.querySelector('.on')||list.firstChild;try{on.focus({preventScroll:true});on.scrollIntoView({block:'nearest'})}catch(e){}
+  }
+  $('#skGrid').addEventListener('click',openSk);
+  $('#skClose').addEventListener('click',()=>{md.hidden=true});
+  md.addEventListener('click',e=>{if(e.target===md)md.hidden=true});
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!md.hidden){md.hidden=true;e.stopPropagation()}},true);
 })();
 
 body.classList.add('intro');syncGameUI();
