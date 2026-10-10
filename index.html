@@ -289,6 +289,11 @@ code{font:500 15px/1 var(--mono);letter-spacing:.2em}
 .gtag.on{background:var(--fg);color:var(--bg);border-color:var(--fg)}
 .ghelp{position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--veil-b);color:var(--fg);cursor:pointer;font:600 13px/1 var(--display)}
 .ghelp:hover{border-color:var(--fg)}
+.ht-req{margin:6px 0 2px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
+.ht-reqh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;font:600 11px/1 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
+.ht-reqh b{padding:4px 8px;border-radius:99px;border:1px solid var(--line);font:500 10px/1 var(--mono);letter-spacing:.08em;color:var(--fg)}
+.ht-reqh .lv-1{border-color:#4fd16a}.ht-reqh .lv-2{border-color:#e0b43c}.ht-reqh .lv-3{border-color:#e0583c}
+.ht-req ul{margin:0;padding-left:18px;display:grid;gap:5px}.ht-req li{font-size:12.5px;line-height:1.45}
 .ht-lead{color:var(--mute);margin-bottom:2px!important}
 .ht-act{margin-top:16px;display:flex;justify-content:flex-end}
 #nbStage{position:fixed;z-index:12;border-radius:18px;border:1px solid var(--line);background:var(--veil-a);overflow:hidden;
@@ -402,6 +407,9 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
         </button>
         <button class="ib" id="bSide" aria-label="Fila de músicas" aria-pressed="false" title="Fila de músicas (Q)">
           <svg viewBox="0 0 16 16"><path d="M2 4h8M2 8h8M2 12h4M12.5 12.2V5.4l2.5-.9"/><circle cx="11" cy="12.4" r="1.5"/></svg>
+        </button>
+        <button class="ib" id="bVoz" aria-label="Escrever o que eu falo" aria-pressed="false" title="Escrever o que eu falo (microfone)" hidden>
+          <svg viewBox="0 0 16 16"><rect x="6" y="1.8" width="4" height="7" rx="2"/><path d="M3.8 7.6c0 2.4 1.8 4 4.2 4s4.2-1.6 4.2-4M8 11.6v2.6M5.6 14.2h4.8"/></svg>
         </button>
         <button class="ib" id="bRoom" aria-label="Salas e jogo em grupo" aria-pressed="false" title="Salas: jogue com amigos">
           <svg viewBox="0 0 16 16"><circle cx="5.5" cy="5.5" r="2.2"/><circle cx="11.2" cy="6.2" r="1.8"/><path d="M1.5 13c0-2.4 1.8-4 4-4s4 1.6 4 4M10 9.3c.4-.1.8-.2 1.2-.2 1.9 0 3.3 1.3 3.3 3.4"/></svg>
@@ -593,6 +601,12 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
     </ul>
     <h3>Leituras no topo</h3>
     <p><b>BPM</b> é o ritmo estimado da música (batidas por minuto). <b>Pico</b> é a frequência mais forte no momento, em Hz. A barrinha mostra a intensidade. A interface treme de leve a cada batida.</p>
+    <h3>Skin Código e voz</h3>
+    <ul>
+      <li>Na skin <b>Código</b>, letras e números aparecem na batida, vindos de um lado e sumindo. Nela surge o botão de <b>microfone</b> no topo.</li>
+      <li>Com o microfone ligado, o que você <b>falar ou cantar perto dele</b> é escrito na tela, palavra por palavra.</li>
+      <li class="warn"><b>Limites:</b> só funciona no Chrome, Edge e Safari (no Firefox e derivados não existe). Precisa de internet, porque o navegador envia o áudio do microfone ao serviço de voz dele (Google, no Chrome). Ele escuta o <b>microfone</b>, não a música do computador, então não transcreve letras de músicas tocando no alto-falante com qualidade.</li>
+    </ul>
     <h3>Jogo do dinossauro</h3>
     <p>Ligue pela lista de Jogos (ou direto pela tecla G).</p>
     <ul>
@@ -653,7 +667,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
     </div>
   </header>
   <section class="i-gate" id="iGate">
-    <p class="i-eyebrow">Visualizador de som · 10 skins</p>
+    <p class="i-eyebrow">Visualizador de som · 15 skins</p>
     <h1 class="i-title" id="iTitle" aria-label="Ressonância"></h1>
     <div class="i-pick" id="iPick">
       <p class="i-lede">Toque qualquer música ou som no computador. A tela inteira responde.</p>
@@ -1748,6 +1762,202 @@ skin('Órbitas','repeating-radial-gradient(circle,#111 0 2px,#eee 2px 5px)',(g,w
   g.beginPath();g.arc(cx,cy,u*(.03+.02*A.bass+.015*A.pulse),0,TAU);g.fillStyle=`rgba(${fg},1)`;g.fill();
 });
 
+/* ───────────── voz: escreve o que a pessoa fala (opcional, só no navegador que suportar) ───────────── */
+const Voz={ok:!!(window.SpeechRecognition||window.webkitSpeechRecognition),on:false,q:[],rec:null,em:{},err:''};
+Voz.start=function(){
+  if(!Voz.ok||Voz.rec)return;
+  const R=window.SpeechRecognition||window.webkitSpeechRecognition,r=new R();
+  r.lang='pt-BR';r.continuous=true;r.interimResults=true;Voz.em={};
+  r.onresult=e=>{
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const res=e.results[i],tx=res[0].transcript.trim().split(/\s+/).filter(Boolean),done=Voz.em[i]||0,lim=res.isFinal?tx.length:tx.length-1;
+      for(let j=done;j<lim;j++)if(Voz.q.length<40)Voz.q.push(tx[j]);
+      if(lim>done)Voz.em[i]=lim;
+    }
+  };
+  r.onerror=e=>{
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){Voz.err='O navegador bloqueou o microfone.';Voz.on=false}
+    else if(e.error==='network'){Voz.err='O reconhecimento de voz precisa de internet.';Voz.on=false}
+  };
+  r.onend=()=>{Voz.rec=null;if(Voz.on)setTimeout(()=>{if(Voz.on)Voz.start()},300);else if(Voz.onChange)Voz.onChange()};
+  Voz.rec=r;try{r.start()}catch(e){Voz.rec=null}
+};
+Voz.set=function(on){
+  Voz.on=on;Voz.err='';
+  if(on)Voz.start();else if(Voz.rec){try{Voz.rec.stop()}catch(e){}}
+  if(Voz.onChange)Voz.onChange();
+};
+
+/* 11 · Código — anéis de letras e números; letras aleatórias entram na batida e a voz vira texto */
+const CG='0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#$%&@+=<>/';
+const cgRings=Array.from({length:24},(_,k)=>{
+  const f=k/23,dash=[];for(let i=0;i<14;i++)dash.push(Math.random()<.5?2+Math.random()*9:1+Math.random()*3,2+Math.random()*7);
+  let s='';for(let i=0;i<46;i++)s+=CG[(Math.random()*CG.length)|0];
+  return{f,dash,s,sp:(.05+Math.random()*.22)*(k%2?1:-1),ph:Math.random()*TAU,wid:2.4+f*2.2};
+});
+const cg={p:[],bn:0,lt:-1,rev:0};
+function cgSpawn(w,h,u,txt,hue,big){
+  const a=Math.random()*TAU,R=Math.hypot(w,h)*.5+40,tx=w/2+(Math.random()-.5)*u*.5,ty=h/2+(Math.random()-.5)*u*.35;
+  const sx=w/2+Math.cos(a)*R,sy=h/2+Math.sin(a)*R,life=big?3.4:1.4+Math.random()*.9;
+  cg.p.push({ch:txt,sx,sy,tx:big?tx:w/2+Math.cos(a)*u*(.1+Math.random()*.3),ty:big?ty:h/2+Math.sin(a)*u*(.1+Math.random()*.3),t:0,life,hue,size:big?u*(.05+Math.min(.04,.06/Math.max(1,txt.length*.35))):u*(.03+Math.random()*.05),word:!!big,ang:Math.atan2(h/2-sy,w/2-sx)});
+}
+skin('Código','conic-gradient(from 90deg,#ff9a3d,#ff4fa0,#8a5cff,#2de2e6,#ffd23f,#ff9a3d)',(g,w,h,dark,F)=>{
+  const cx=F.cx,cy=F.cy,u=F.u,t=A.t;
+  g.fillStyle=dark?'#05050a':'#f3f2ee';g.fillRect(0,0,w,h);
+  g.globalCompositeOperation=dark?'lighter':'source-over';
+  const fresh=t!==cg.lt;
+  g.lineCap='butt';
+  const small=Math.max(8,u*.017);
+  g.font=`500 ${small}px "DM Mono",monospace`;g.textAlign='center';g.textBaseline='middle';
+  for(let k=0;k<cgRings.length;k++){
+    const o=cgRings[k],f=o.f,r=u*(.1+f*.4)+u*.006*Math.sin(t*.7+o.ph),e=bandAt(f*.92);
+    const arcs=8,lw=o.wid*(u/700)*(1+e*1.4);
+    g.lineWidth=Math.max(1,lw);g.setLineDash(o.dash.map(d=>d*(u/700)));
+    for(let s=0;s<arcs;s++){
+      const a0=s/arcs*TAU+t*o.sp,hue=(s/arcs*330+k*7+t*8+40)%360;
+      g.strokeStyle=dark?hsl(hue,88,55+e*14,.28+e*.55):hsl(hue,80,38,.4+e*.45);
+      g.lineDashOffset=-t*30*o.sp*(u/700);
+      g.beginPath();g.arc(cx,cy,r,a0,a0+TAU/arcs*.96);g.stroke();
+    }
+    g.setLineDash([]);
+    if(k%2===0){
+      const n=Math.max(8,Math.floor(TAU*r/(small*1.35))),st=o.s;
+      for(let i=0;i<n;i++){
+        if(((i*7+k*3)%5)>2)continue;
+        const a=i/n*TAU+t*o.sp*.9+o.ph;
+        const hue=(i/n*330+k*7+t*8+40)%360;
+        g.save();g.translate(cx+Math.cos(a)*r,cy+Math.sin(a)*r);g.rotate(a+Math.PI/2);
+        g.fillStyle=dark?hsl(hue,90,66,.35+e*.6):hsl(hue,75,34,.5+e*.4);
+        g.fillText(st[(i+((t*(2+k*.2))|0))%st.length],0,0);g.restore();
+      }
+    }
+  }
+  g.beginPath();g.arc(cx,cy,u*(.085+A.bass*.012+A.pulse*.01),0,TAU);g.fillStyle=dark?'#05050a':'#f3f2ee';g.globalCompositeOperation='source-over';g.fill();
+  /* letras da batida e palavras ditas */
+  if(fresh){
+    const dt=Math.min(.05,F.dt);cg.lt=t;
+    if(A.beatN!==cg.bn){cg.bn=A.beatN;const n=3+Math.round(A.beatStr*6);for(let i=0;i<n&&cg.p.length<90;i++)cgSpawn(w,h,u,CG[(Math.random()*CG.length)|0],Math.random()*360,false)}
+    if(Voz.q.length&&cg.p.filter(p=>p.word).length<7)cgSpawn(w,h,u,Voz.q.shift(),Math.random()*360,true);
+    for(const p of cg.p)p.t+=dt/p.life;
+    cg.p=cg.p.filter(p=>p.t<1);
+  }
+  g.globalCompositeOperation='source-over';g.textAlign='center';
+  for(const p of cg.p){
+    const e=p.t<.5?1-Math.pow(1-p.t*2,3):1,x=lerp(p.sx,p.tx,e*(p.word?.98:.8)),y=lerp(p.sy,p.ty,e*(p.word?.98:.8));
+    const al=p.word?Math.min(1,p.t*8)*Math.min(1,(1-p.t)*4):Math.sin(p.t*Math.PI);
+    const txt=p.word?p.ch.slice(0,Math.ceil(p.ch.length*Math.min(1,p.t*9))):p.ch;
+    g.font=`${p.word?650:500} ${p.size}px ${p.word?'"Bricolage Grotesque"':'"DM Mono"'},monospace`;
+    g.save();g.translate(x,y);if(!p.word)g.rotate(p.ang+Math.PI/2*(p.size>u*.05?0:1));
+    g.shadowColor=hsl(p.hue,95,60,.9);g.shadowBlur=dark?u*.02:0;
+    g.fillStyle=dark?hsl(p.hue,90,72,al):hsl(p.hue,80,32,al);g.fillText(txt,0,0);g.restore();
+  }
+  g.shadowBlur=0;
+});
+
+/* 12 · Singularidade — disco de acreção fininho em preto e branco */
+skin('Singularidade','radial-gradient(circle,#000 0 30%,#fff 44%,#111 72%)',(g,w,h,dark,F)=>{
+  const cx=F.cx,cy=F.cy,u=F.u,t=A.t;
+  g.fillStyle=dark?'#020203':'#f2f2f0';g.fillRect(0,0,w,h);
+  const fg=dark?'240,244,250':'14,16,22',R=u*(.15+A.bass*.012+A.pulse*.01);
+  g.globalCompositeOperation=dark?'lighter':'source-over';
+  const K=70;
+  for(let k=0;k<K;k++){
+    const f=k/(K-1),e=bandAt(f*.9),r=R*(1.04+f*1.9);
+    g.beginPath();
+    for(let i=0;i<=140;i++){
+      const th=i/140*TAU,rr=r*(1+.025*Math.sin(th*5+t*.6+k*.3)*(.3+e)+.012*Math.sin(th*13-t*1.3+k));
+      const squash=1-.0*f,x=cx+Math.cos(th)*rr,y=cy+Math.sin(th)*rr*squash;i?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    g.lineWidth=.5+(1-f)*1.4+e*1.4;g.strokeStyle=`rgba(${fg},${(.1+.55*(1-f)+.4*e)*(.55+.45*Math.sin(k*.9))})`;g.stroke();
+  }
+  /* faixa de luz que gira, mais forte de um lado */
+  for(let i=0;i<260;i++){
+    const th=i/260*TAU,b=.5+.5*Math.cos(th-t*.5),e=bandAt(i/260);
+    const r0=R*1.02,r1=R*(1.1+.9*b+e*1.3);
+    g.beginPath();g.moveTo(cx+Math.cos(th)*r0,cy+Math.sin(th)*r0);g.lineTo(cx+Math.cos(th)*r1,cy+Math.sin(th)*r1);
+    g.lineWidth=.8;g.strokeStyle=`rgba(${fg},${.05+.2*b*(.4+e)})`;g.stroke();
+  }
+  g.globalCompositeOperation='source-over';
+  g.beginPath();g.arc(cx,cy,R,0,TAU);g.fillStyle=dark?'#000':'#07070a';g.fill();
+  g.beginPath();g.arc(cx,cy,R*1.02,0,TAU);g.lineWidth=1.4+A.pulse*2;g.strokeStyle=`rgba(${fg},.9)`;g.stroke();
+});
+
+/* 13 · Disco — painel modular verde e amarelo, com o toca-discos no centro */
+skin('Disco','linear-gradient(135deg,#40705a 0 50%,#efcf78 50%)',(g,w,h,dark,F)=>{
+  const cx=F.cx,cy=F.cy,u=F.u,t=A.t;
+  const bg=dark?'#2f5846':'#7fa88f',ink=dark?'#0b0e0c':'#17211b',gold=dark?'#efcf78':'#f4dc8f';
+  g.fillStyle=bg;g.fillRect(0,0,w,h);
+  g.fillStyle=ink;g.fillRect(0,cy-u*.4,w,3);g.fillRect(0,cy+u*.4,w,3);
+  const R=u*.34;
+  g.fillStyle=ink;g.beginPath();g.arc(cx,cy,R*1.07,0,TAU);g.fill();
+  g.fillStyle=gold;g.beginPath();g.arc(cx,cy,R*(1+A.pulse*.012),0,TAU);g.fill();
+  g.strokeStyle=ink;g.lineWidth=1;g.globalAlpha=.25;
+  for(let i=1;i<7;i++){g.beginPath();g.arc(cx,cy,R*(.3+i*.1),0,TAU);g.stroke()}
+  g.globalAlpha=1;
+  /* anel de traços que respira com as frequências */
+  const N=72,r0=u*.1;
+  for(let i=0;i<N;i++){
+    const a=i/N*TAU-Math.PI/2,e=bandAt(mirror(i/N*2)*.9),l=u*(.02+.05*e);
+    g.beginPath();g.moveTo(cx+Math.cos(a)*r0,cy+Math.sin(a)*r0);g.lineTo(cx+Math.cos(a)*(r0+l),cy+Math.sin(a)*(r0+l));
+    g.lineWidth=2;g.strokeStyle=ink;g.stroke();
+  }
+  g.beginPath();g.arc(cx,cy,u*.058,0,TAU);g.fillStyle=ink;g.fill();
+  const na=t*1.2;g.beginPath();g.arc(cx,cy,u*.014,0,TAU);g.fillStyle=gold;g.fill();
+  g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.cos(na)*u*.04,cy+Math.sin(na)*u*.04);g.lineWidth=2;g.strokeStyle=gold;g.stroke();
+  /* braço e detalhes */
+  g.strokeStyle=gold;g.lineWidth=2;g.beginPath();g.arc(cx,cy,R*1.2,Math.PI*1.08,Math.PI*1.34);g.stroke();
+  g.beginPath();g.arc(cx,cy,R*1.12,-.2+A.pulse*.05,.35);g.lineWidth=1.5;g.strokeStyle=ink;g.stroke();
+  g.fillStyle=ink;g.beginPath();g.arc(cx+R*.9,cy+R*.92,u*.014,0,TAU);g.fill();
+  const bw=u*.22,bx=cx-R-u*.02,by=cy-R*1.3;
+  for(let i=0;i<3;i++){g.fillStyle=gold;g.fillRect(cx+R*.9,cy-R*1.1+i*u*.022,bw*(.35+.65*bandAt(.1+i*.3)),u*.008)}
+  g.fillStyle=ink;g.font=`600 ${Math.max(9,u*.018)}px "DM Mono",monospace`;g.textAlign='left';g.fillText('0'+(1+(A.beatN%9))+' · CÍRCULOS',bx+u*.02,by);
+  const dots=6;for(let i=0;i<dots;i++)for(let j=0;j<dots;j++){g.fillStyle=ink;g.globalAlpha=.4+.5*bandAt((i+j)/10);g.fillRect(cx+R*1.1+i*u*.016,cy+R*.3+j*u*.016,3,3)}
+  g.globalAlpha=1;
+});
+
+/* 14 · Extrusão — letras e números em 3D isométrico, trocam na batida */
+const exCol=[['#5d4b94','#e8e0ff'],['#707378','#f1f1f3'],['#3a8ea0','#dff6f8'],['#8a4f7a','#ffe3f2'],['#3f6f55','#e7f7d4']];
+const ex={bn:-1,i:0,ch:'2',pr:0,ang:0};
+skin('Extrusão','linear-gradient(135deg,#5d4b94,#3a8ea0)',(g,w,h,dark,F)=>{
+  const cx=F.cx,cy=F.cy,u=F.u,t=A.t;
+  if(A.beatN!==ex.bn){ex.bn=A.beatN;if(A.beatN%2===0){ex.i=(ex.i+1)%exCol.length;ex.ch='0123456789ABCDEFGHJKMNPRSTUVWXYZ'[(Math.random()*32)|0];ex.pr=1}}
+  ex.pr*=Math.exp(-F.dt*3);
+  const c=exCol[ex.i],bg=dark?c[0]:c[1],fg=dark?c[1]:c[0];
+  g.fillStyle=bg;g.fillRect(0,0,w,h);
+  const size=u*(.62+A.bass*.05+ex.pr*.04),depth=Math.round(u*(.16+A.level*.18));
+  g.font=`800 ${size}px "Bricolage Grotesque",sans-serif`;g.textAlign='center';g.textBaseline='middle';
+  const dx=Math.cos(.52+Math.sin(t*.2)*.1),dy=Math.sin(.52+Math.sin(t*.2)*.1);
+  const steps=Math.min(70,depth);
+  for(let i=steps;i>=1;i--){
+    const k=i/steps;g.fillStyle=fg;g.globalAlpha=.5*(1-k)*(1-k)+.02;
+    g.fillText(ex.ch,cx+dx*depth*k,cy+dy*depth*k);
+  }
+  g.globalAlpha=1;g.fillStyle=fg;g.fillText(ex.ch,cx,cy);
+  g.globalAlpha=.18;g.fillStyle=bg;g.fillText(ex.ch,cx-size*.015,cy-size*.015);g.globalAlpha=1;
+  g.font=`600 ${Math.max(9,u*.016)}px "DM Mono",monospace`;g.fillStyle=fg;g.textAlign='left';
+  g.fillText('0'+(1+ex.i)+'  EXTRUSÃO ISOMÉTRICA',u*.05+(w-u)/2,h-u*.05);
+});
+
+/* 15 · Lente — vidro fosco com um miolo dourado, como a peça da referência */
+skin('Lente','radial-gradient(circle at 50% 50%,#f0c860 0 12%,#6d7480 14% 40%,#d9dde2 70%)',(g,w,h,dark,F)=>{
+  const cx=F.cx,cy=F.cy,u=F.u,t=A.t;
+  const bg=dark?'#15171b':'#e3e5e8';g.fillStyle=bg;g.fillRect(0,0,w,h);
+  const R=u*(.24+A.bass*.02+A.pulse*.012);
+  const blob=(sc,amp,ph)=>{g.beginPath();for(let i=0;i<=120;i++){const th=i/120*TAU,e=loopBand(th+t*.1);
+    const r=R*sc*(1+amp*(.11*Math.sin(2*th+t*.5+ph)+.07*Math.sin(3*th-t*.4+ph*2)+.04*Math.sin(5*th+t*.8))+e*.12*amp);
+    const x=cx+Math.cos(th)*r,y=cy+Math.sin(th)*r;i?g.lineTo(x,y):g.moveTo(x,y)}g.closePath()};
+  g.save();g.shadowColor='rgba(0,0,0,'+(dark?.55:.22)+')';g.shadowBlur=u*.08;g.shadowOffsetY=u*.04;
+  blob(1.18,1,0);g.fillStyle=dark?'rgba(120,128,140,.55)':'rgba(120,130,142,.5)';g.fill();g.restore();
+  blob(1.18,1,0);const gr=g.createRadialGradient(cx-R*.3,cy-R*.4,R*.1,cx,cy,R*1.4);
+  gr.addColorStop(0,dark?'rgba(210,216,226,.5)':'rgba(255,255,255,.85)');gr.addColorStop(1,dark?'rgba(70,76,88,.55)':'rgba(150,158,170,.45)');g.fillStyle=gr;g.fill();
+  g.lineWidth=1.2;g.strokeStyle=dark?'rgba(255,255,255,.28)':'rgba(255,255,255,.9)';g.stroke();
+  blob(.78,.5,2);g.fillStyle=dark?'rgba(30,34,42,.6)':'rgba(70,78,90,.42)';g.fill();
+  blob(.5,.25,4);g.fillStyle=dark?'rgba(15,17,22,.65)':'rgba(50,56,66,.55)';g.fill();
+  const gold=g.createLinearGradient(cx-R*.2,cy-R*.2,cx+R*.2,cy+R*.2);gold.addColorStop(0,'#fbe7a4');gold.addColorStop(.5,'#d9a84a');gold.addColorStop(1,'#8a6420');
+  g.beginPath();g.arc(cx,cy,R*(.18+A.pulse*.03),0,TAU);g.fillStyle=gold;g.fill();
+  g.beginPath();g.arc(cx,cy,R*.18,0,TAU);g.lineWidth=1;g.strokeStyle='rgba(255,255,255,.5)';g.stroke();
+});
+
 /* ───────────── palco, temas, transições ───────────── */
 const cv=$('#stage'),g=cv.getContext('2d',{alpha:false});
 const root=document.documentElement,ui=$('#ui'),wrap=$('#wrap'),dock=$('#dock');
@@ -1768,7 +1978,7 @@ let cur=clamp(store.get('skin',0),0,SK.length-1),mix=!!store.get('mix',false),tr
 const chipsEl=$('#chips'),chips=[];
 SK.forEach((s,i)=>{
   const b=document.createElement('button');b.className='chip';b.type='button';b.style.setProperty('--sw',s.sw);
-  b.innerHTML=`<i></i><span>${s.name}</span><em>${i<9?i+1:0}</em>`;b.addEventListener('click',()=>{setMix(false);pick(i)});
+  b.innerHTML=`<i></i><span>${s.name}</span><em>${i<9?i+1:i===9?0:''}</em>`;b.addEventListener('click',()=>{setMix(false);pick(i)});
   chipsEl.appendChild(b);chips.push(b);
 });
 const mixBtn=document.createElement('button');mixBtn.className='chip mix';mixBtn.type='button';mixBtn.innerHTML='<i></i><span>Mix</span><em>M</em>';
@@ -1780,13 +1990,15 @@ function paintChips(){
   $('#tag').textContent='Nº '+String(cur+1).padStart(2,'0')+' — '+SK[cur].name+(mix?' · mix':'');
   $('#iSkinName').textContent='Nº '+String(cur+1).padStart(2,'0')+' · '+SK[cur].name;
 }
+function vozUI(){const b=$('#bVoz');if(!b)return;b.hidden=SK[cur].name!=='Código';b.setAttribute('aria-pressed',String(Voz.on));b.classList.toggle('has',Voz.on)}
+Voz.onChange=vozUI;
 function pick(i,dur,persist){
   i=(i+SK.length)%SK.length;if(i===cur)return;
-  tr={from:cur,t:0,dur:dur||.9};cur=i;mixT=0;if(persist!==false)store.set('skin',cur);paintChips();
+  tr={from:cur,t:0,dur:dur||.9};cur=i;mixT=0;if(persist!==false)store.set('skin',cur);paintChips();vozUI();if(Voz.on&&SK[cur].name!=='Código')Voz.set(false);
   const c=chips[i];if(c&&c.scrollIntoView)try{c.scrollIntoView({block:'nearest',inline:'nearest'})}catch(e){}
 }
 function setMix(on){mix=on;mixT=0;store.set('mix',mix);paintChips()}
-paintChips();
+paintChips();vozUI();
 
 function runSkin(i,ctx,dark){const s=SK[i];ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';s.fn(ctx,w,h,dark,F);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.setLineDash([])}
 function render(dt,dark){
@@ -2497,7 +2709,7 @@ bindSlider('#rSpd','#oSpd','speed',fmtX,'spd');
 /* ───────────── abertura ─────────────
    Porta: título que dança com o som. "Com som" toca uma introdução curta (2 compassos de crescendo) e
    a "queda" abre o tour; "em silêncio" usa um áudio fantasma sintético para a tela ter a mesma vida.
-   O tour tem 5 passos: apresentação, privacidade, montagem das 10 skins, tremor e o botão do dino. */
+   O tour tem 5 passos: apresentação, privacidade, montagem das 15 skins, tremor e o botão do dino. */
 const intro=$('#intro'),body=document.body;
 const iTitle=$('#iTitle'),iMark=$('#iMark'),iSkip=$('#iSkip'),iNav=$('#iNav'),iHint=$('#iHint'),iNext=$('#iNext'),iProg=$('#iProg'),spot=$('#iSpot');
 const Intro={phase:'gate',step:0,ot:0,sound:false,seen:store.get('seen',false),forceTour:false,adv:0,mont:0};
@@ -2506,7 +2718,7 @@ const TOUR=[
   {line:'Oi. Eu sou um <b>visualizador de som</b>.',sub:'Tudo que tocar no seu computador vira desenho em tempo real.',skin:0,dur:6.2},
   {line:'Música, vídeo, jogo, <b>barulho de chuva</b>.',sub:'O som é analisado aqui, no seu navegador. Nada é gravado e nada sai do seu computador.',skin:2,dur:7},
   {line:'Primeiro, me dê <b>um som</b>.',sub:'Este quadro escolhe de onde vem o áudio. Para captar uma aba, use “Áudio do computador” e marque “Compartilhar áudio”. Sem nada à mão? A Demo toca sozinha.',skin:1,spot:['.src','#bCtl'],dur:10},
-  {line:'São <b>dez skins</b>. Olha só.',sub:'Clique numa delas aqui embaixo, aperte de 1 a 0 ou use as setas. O botão Mix troca de skin sozinho a cada 14 segundos.',montage:true,spot:['#chips'],dur:8},
+  {line:'São <b>quinze skins</b>. Olha só.',sub:'Clique numa delas aqui embaixo, aperte de 1 a 0 ou use as setas. O botão Mix troca de skin sozinho a cada 14 segundos.',montage:true,spot:['#chips'],dur:8},
   {line:'Sente isso?',sub:'A tela inteira treme de leve na batida. Este controle ajusta a força do tremor, ou desliga.',skin:8,shake:true,spot:['#rTrem','#bCtl'],dur:8},
   {line:'Deixe do <b>seu jeito</b>.',sub:'Sensibilidade faz as ondas reagirem mais ou menos ao som. Velocidade acelera ou acalma o movimento.',skin:5,spot:['.sliders','#bCtl'],dur:8},
   {line:'Claro ou <b>escuro</b>?',sub:'O botão do sol troca o tema da página inteira. O atalho é a tecla T.',skin:3,spot:['#bTheme'],dur:6.4},
@@ -2824,6 +3036,12 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!rm.hidden){hideRoom();e.sto
 
 $('#bHome').addEventListener('click',()=>{nbClose();closeGames();openIntro()});
 $('#bGame').addEventListener('click',()=>toggleGames());
+$('#bVoz').addEventListener('click',()=>{
+  if(!Voz.ok){say('Este navegador não tem reconhecimento de voz. Funciona no Chrome, Edge e Safari.');return}
+  Voz.set(!Voz.on);
+  if(Voz.on)say('Ouvindo o microfone. Fale ou cante perto dele e as palavras aparecem.');
+  else say(Voz.err||'Voz desligada.');
+});
 $('#bPause').addEventListener('click',togglePause);
 document.addEventListener('click',e=>{if(!Gm.on)return;const b=e.target.closest&&e.target.closest('button');if(b)b.blur()});
 document.addEventListener('change',e=>{if(Gm.on&&e.target&&e.target.blur)e.target.blur()});
@@ -2896,14 +3114,18 @@ const NBG={open:false};
   const symDino='<svg class="fill" viewBox="0 0 22 24"><path fill-rule="evenodd" d="'+dp+dh+'"/></svg>';
   const symNb='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 9-9 9-9-9z"/><path d="M12 16V9M9 11.5L12 8.5l3 3"/><path d="M5.2 13.2h4M14.8 10.8h4" opacity=".5"/></svg>';
   const GAMES=[
-    {id:'dino',name:'Dinossauro',blurb:'Corrida infinita por cima das ondas. Os obstáculos chegam no ritmo da música.',tags:['Solo','Salas com amigos'],cover:dinoCover,sym:symDino,
+    {id:'dino',name:'Dinossauro',blurb:'Corrida infinita por cima das ondas. Os obstáculos chegam no ritmo da música.',tags:['Solo','Salas com amigos','Leve'],cover:dinoCover,sym:symDino,
+      perf:'Leve',
+      req:['<b>Máquina:</b> o jogo em si é bem leve (desenho 2D simples). O que pesa de verdade é o visualizador rodando atrás, e isso depende da skin escolhida.','<b>Celular:</b> funciona, com toque na tela para pular e segurar para abaixar.','<b>Teclado:</b> opcional.','<b>Internet:</b> só para as salas com amigos (mesma rede). Jogando sozinho, não precisa.','<b>Som:</b> o jogo não tem som próprio. Ele segue a música que estiver tocando.','<b>Se travar:</b> escolha uma skin mais simples ou reduza o tremor da interface.'],
       help:[
         {h:'O jogo',p:'Um dinossauro corre sem parar por cima das ondas. Cactos e aves chegam no ritmo da música: quanto mais rápida a batida, mais rápido o jogo.'},
         {h:'Controles',ul:['<b>Pular:</b> Espaço, seta para cima, W ou toque na tela.','<b>Abaixar:</b> seta para baixo, S, ou segurar o toque.','<b>Pausar:</b> P ou o botão de pausa no topo.','<b>Recomeçar:</b> Enter ou Espaço depois de perder.','<b>Ligar e desligar direto:</b> tecla G.']},
         {h:'Velocidade e música',ul:['A velocidade acompanha o BPM (batidas por minuto) da música que toca.','Abaixo de 100 BPM, o jogo trata como 100, para continuar possível de jogar.','Sem som tocando, ele corre em uma velocidade padrão.']},
         {h:'Recorde',p:'Fica guardado só neste navegador.'},
         {h:'Com amigos',ul:['Abra <b>Salas</b> (ícone de pessoas no topo), crie uma sala e convide pelo ID.','Todos precisam estar na mesma rede (mesmo Wi-Fi).','Quem morre vira espectador. No fim, aparece o ranking por pontos.']}]},
-    {id:'nb',name:'Neon Breach',blurb:'Infiltração tática vista de cima. Hackeie com as setas e passe pelos cones de visão.',tags:['Solo','17 missões'],cover:nbCover,sym:symNb,
+    {id:'nb',name:'Neon Breach',blurb:'Infiltração tática vista de cima. Hackeie com as setas e passe pelos cones de visão.',tags:['Solo','17 missões','Médio'],cover:nbCover,sym:symNb,
+      perf:'Médio',
+      req:['<b>Máquina:</b> consumo médio. Ele desenha cones de visão, luzes e vários guardas ao mesmo tempo, <i>e</i> o visualizador continua rodando atrás com o vidro desfocado. Em computador comum roda bem. Em celular antigo ou PC fraco pode ficar pesado.','<b>Celular:</b> há botões na tela (setas, HACK e AGACHAR), mas a experiência é bem melhor com teclado, e a tela pequena deixa o mapa apertado. Prefira computador ou tablet.','<b>Teclado:</b> recomendado (WASD ou setas, Shift, E, Esc).','<b>Internet:</b> não precisa. Tudo roda no seu navegador.','<b>Som:</b> tem efeitos sonoros próprios. A trilha vem desligada.','<b>Se travar:</b> troque para uma skin mais simples no Ressonância (como Faixas ou Órbitas) e feche outras abas pesadas.','<b>Progresso:</b> notas e recordes ficam só neste navegador. Limpar os dados do site apaga tudo.'],
       help:[
         {h:'O jogo',p:'Você é um agente invadindo prédios cheios de guardas e câmeras. Há dois modos: <b>Invasão</b> (hackear os terminais e chegar à extração) e <b>Resgate</b> (achar a pessoa, abrir o caminho e escoltá-la até a saída). São 17 missões em 6 níveis de dificuldade.'},
         {h:'Controles',ul:['<b>Mover:</b> WASD ou setas.','<b>Furtivo:</b> segure Shift. O rastreamento sobe pela metade, mas você anda mais devagar.','<b>Hackear:</b> E, perto de um terminal ou porta trancada.','<b>Pausar:</b> Esc.','<b>Celular:</b> botões na tela (setas, HACK e AGACHAR).','Clique dentro do jogo para ele receber o teclado.']},
@@ -2985,6 +3207,12 @@ const NBG={open:false};
     $('#htTitle').textContent=g.name;$('#htSym').innerHTML=g.sym;
     const b=$('#htBody');b.replaceChildren();
     const lead=document.createElement('p');lead.className='ht-lead';lead.textContent=g.blurb;b.appendChild(lead);
+    if(g.req){
+      const rq=document.createElement('div');rq.className='ht-req';
+      const hd=document.createElement('div');hd.className='ht-reqh';hd.innerHTML='<span>Requisitos e avisos</span><b class="lv lv-'+(g.perf==='Leve'?'1':g.perf==='Médio'?'2':'3')+'"></b>';hd.querySelector('b').textContent='Consumo: '+g.perf;
+      const ul=document.createElement('ul');g.req.forEach(x=>{const l=document.createElement('li');l.innerHTML=x;ul.appendChild(l)});
+      rq.append(hd,ul);b.appendChild(rq);
+    }
     for(const s of g.help){
       const h=document.createElement('h3');h.textContent=s.h;b.appendChild(h);
       if(s.p){const p=document.createElement('p');p.innerHTML=s.p;b.appendChild(p)}
