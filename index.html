@@ -310,6 +310,7 @@ code{font:500 15px/1 var(--mono);letter-spacing:.2em}
 #nbStage{position:fixed;z-index:12;border-radius:18px;border:1px solid var(--line);background:var(--veil-a);overflow:hidden;
   backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);animation:mIn .25s ease}
 #nbStage[hidden]{display:none}
+#nbStage.solid{background:#0b1030;backdrop-filter:none;-webkit-backdrop-filter:none}
 #nbFrame{width:100%;height:100%;border:0;display:block;background:transparent}
 @media(max-width:640px){.pop{right:8px}.gmain{grid-template-columns:88px 1fr}}
 #side{position:fixed;top:0;right:0;bottom:0;width:min(370px,100%);z-index:14;display:flex;flex-direction:column;gap:16px;padding:16px;overflow:auto;background:var(--veil-b);border-left:1px solid var(--line);
@@ -641,6 +642,13 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li><b>Mover:</b> WASD ou setas. <b>Furtivo:</b> Shift. <b>Hackear:</b> E. <b>Pausar:</b> Esc. Clique dentro do jogo para ele receber o teclado.</li>
       <li>Os efeitos sonoros ficam ligados. A música própria do jogo vem desligada, para não brigar com a sua. O botão <b>← Jogos</b> volta à lista.</li>
       <li>Notas e progresso ficam guardados só neste navegador.</li>
+    </ul>
+    <h3>Ilha de Repouso</h3>
+    <ul>
+      <li>Um mundo 3D calmo: uma ilha pequena cercada de água, com dia e noite lentos. É <b>pesado</b> (pede placa de vídeo decente); o botão Qualidade no canto ajuda.</li>
+      <li><b>Andar:</b> WASD ou setas (joystick no celular). <b>Câmera:</b> arrastar. <b>Pular:</b> Espaço. <b>Sentar:</b> E. <b>Acelerar o tempo:</b> N. <b>Sair:</b> Esc.</li>
+      <li>No fim do caminho fica o <b>Santuário do Som</b>: cristais e luz que reagem à música. Sentar no banco vira a câmera para ele.</li>
+      <li>Enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina.</li>
     </ul>
     <h3>Salas (jogo em grupo)</h3>
     <ul>
@@ -2825,7 +2833,7 @@ function frame(ts){
   if(ao!==autoOn){autoOn=ao;ui.classList.toggle('auto',ao);if(ao)wake();else syncCursor()}
   const vw=w-48,vh=h-48;
   F.cx=w/2;F.cy=h/2-cyShift;F.u=Math.min(vw,vh-cyShift*1.25)*.98;F.dt=dt;
-  render(dt,dark);
+  if(NBG.open&&NBG.id==='ilha')window.nbAudio();else render(dt,dark);
   if(Gm.on){gameStep(dt);gameDraw(dark)}
   shake(dt);
   acc+=dt;if(++nf===90){const avg=acc/nf;
@@ -2913,7 +2921,7 @@ const TOUR=[
   {line:'Deixe do <b>seu jeito</b>.',sub:'Sensibilidade faz as ondas reagirem mais ou menos ao som. Velocidade acelera ou acalma o movimento.',skin:5,spot:['.sliders','#bCtl'],dur:8},
   {line:'Claro ou <b>escuro</b>?',sub:'O botão do sol troca o tema da página inteira. O atalho é a tecla T.',skin:3,spot:['#bTheme'],dur:6.4},
   {line:'Quer a tela <b>limpa</b>?',sub:'Fique parado e a interface some sozinha, junto com o cursor. Mexa o mouse e ela volta. H esconde tudo e F liga a tela cheia.',skin:9,spot:['#bFull'],dur:9},
-  {line:'Ah, e tem <b>jogos</b> escondidos.',sub:'Este botão abre a lista: o dinossauro, que corre no ritmo da música, e o Neon Breach, de infiltração. Cada um tem um ? que ensina a jogar.',skin:6,spot:['#bGame'],dur:10},
+  {line:'Ah, e tem <b>jogos</b> escondidos.',sub:'Este botão abre a lista: o dinossauro, que corre no ritmo da música, o Neon Breach, de infiltração, e a Ilha de Repouso, um mundo 3D calmo. Cada um tem um ? que ensina a jogar.',skin:6,spot:['#bGame'],dur:10},
   {line:'E dá para correr com <b>amigos</b>.',sub:'Este botão abre as salas. Você tem um ID só seu. Passe para o dono da sala, ele convida você, cada um escolhe a cor do seu dino e ganha quem for mais longe.',skin:7,spot:['#bRoom'],dur:11},
   {line:'É isso. <b>Bom show</b>.',sub:'Dá para rever esta apresentação pelo botão da casinha, lá em cima.',skin:0}
 ];
@@ -3280,7 +3288,7 @@ addEventListener('keydown',e=>{
 });
 
 /* ───────────── jogos: lista, "como jogar" e o quadro do Neon Breach ───────────── */
-const NBG={open:false};
+const NBG={open:false,id:''};
 (function(){
   const dp=rectsToPath(DINO.head.slice(0,1).concat(DINO.body,[[6,20,3,4],[6,23,5,1],[12,20,3,4],[12,23,5,1]])),dh=rectsToPath([DINO.head[1]]);
   const svg=s=>'data:image/svg+xml,'+encodeURIComponent(s);
@@ -3303,6 +3311,16 @@ const NBG={open:false};
     <g fill="none" stroke="#FF9548" stroke-width="2"><path d="M176 112l6 6-6 6-6-6z"/></g></svg>`);
   const symDino='<svg class="fill" viewBox="0 0 22 24"><path fill-rule="evenodd" d="'+dp+dh+'"/></svg>';
   const symNb='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l9 9-9 9-9-9z"/><path d="M12 16V9M9 11.5L12 8.5l3 3"/><path d="M5.2 13.2h4M14.8 10.8h4" opacity=".5"/></svg>';
+  const ilCover=svg(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 208 156"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1d1f5a"/><stop offset=".62" stop-color="#e9a2c4"/><stop offset="1" stop-color="#ffd9a8"/></linearGradient><linearGradient id="w" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5b6fb8"/><stop offset="1" stop-color="#2a2f78"/></linearGradient></defs>
+    <rect width="208" height="156" fill="url(#g)"/><g fill="#fff" opacity=".8"><circle cx="30" cy="22" r="1.2"/><circle cx="70" cy="14" r="1"/><circle cx="120" cy="26" r="1.2"/><circle cx="176" cy="18" r="1"/><circle cx="150" cy="44" r=".9"/></g>
+    <circle cx="150" cy="58" r="13" fill="#fff6dc" opacity=".92"/><rect y="98" width="208" height="58" fill="url(#w)"/>
+    <path d="M20 112Q104 78 188 112Q104 132 20 112Z" fill="#9fd9a6"/><path d="M20 112Q104 124 188 112Q104 138 20 112Z" fill="#6fb88a"/>
+    <g><rect x="62" y="84" width="4" height="18" fill="#9a6a5a"/><ellipse cx="64" cy="80" rx="13" ry="10" fill="#f4a9c8"/><ellipse cx="64" cy="73" rx="9" ry="7" fill="#f8bfd8"/></g>
+    <g><rect x="146" y="90" width="3" height="14" fill="#9a6a5a"/><ellipse cx="147.5" cy="86" rx="9" ry="8" fill="#8fd9b4"/></g>
+    <g fill="#c9a6ff"><path d="M100 98l6-12 6 12z"/><path d="M110 100l5-9 5 9z" fill="#ffd0f0"/><path d="M92 100l4-8 4 8z" fill="#a8e6ff"/></g>
+    <circle cx="106" cy="82" r="3" fill="#fff" opacity=".9"/><path d="M106 40v40" stroke="#ffd0f0" stroke-width="5" opacity=".28"/>
+    <g opacity=".35" stroke="#fff" fill="none"><path d="M10 130h40M130 140h60M70 146h30"/></g></svg>`);
+  const symIl='<svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17c3-1 6 1 9 0s6-1 9 0"/><path d="M5 14c2-4 12-4 14 0"/><path d="M12 6v5M9.5 8.5C10.5 6 13.5 6 14.5 8.5"/></svg>';
   const GAMES=[
     {id:'dino',name:'Dinossauro',blurb:'Corrida infinita por cima das ondas. Os obstáculos chegam no ritmo da música.',tags:['Solo','Salas com amigos','Leve'],cover:dinoCover,sym:symDino,
       perf:'Leve',
@@ -3323,6 +3341,14 @@ const NBG={open:false};
         {h:'Ser visto',ul:['Os <b>cones amarelos</b> são o que guardas e câmeras enxergam. Ficar dentro de um enche a barra de <b>Rastreamento</b>.','Quando a barra enche, o alarme dispara: os guardas vêm atrás de você e há um tempo limite para sair.','Guarda que encosta em você captura.','Dica: espere a ronda passar. Todo objetivo tem um ponto onde dá para hackear sem ser visto.']},
         {h:'Notas',ul:['<b>S · Fantasma:</b> rastro zero, rastreamento baixo, nenhum hack falho.','<b>A · Sombra:</b> rastro zero.','<b>B · Ruído:</b> cumprida sob alarme.','<b>F · Flatline:</b> falhou.','Suas melhores notas ficam guardadas só neste navegador.']},
         {h:'Som',p:'O jogo tem efeitos sonoros. A trilha própria vem desligada, porque o Ressonância já toca a sua música. Dá para ligar na tela de seleção.'}]}
+    ,{id:'ilha',name:'Ilha de Repouso',blurb:'Uma ilha pequena no meio da água, para só existir. Dia e noite lentos, e o reator de música bem ali, no coração do mundo.',tags:['Solo','3D','Pesado'],cover:ilCover,sym:symIl,
+      perf:'Pesado',
+      req:['<b>Máquina:</b> é um mundo 3D de verdade (WebGL), com água, sombras, milhares de folhas de grama e luzes. Pede <b>placa de vídeo</b> decente ou um celular/computador recente. Em PC fraco ou celular antigo pode ficar travando.','<b>Qualidade:</b> o jogo começa se ajustando sozinho. O botão <b>Qualidade</b> no canto alterna entre baixa, média e alta. Se travar, deixe em baixa.','<b>Visualizador:</b> enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina. A análise do som continua, e é ela que move o reator.','<b>Celular:</b> funciona, com joystick na tela e arrastar para girar a câmera. A bateria pode esquentar.','<b>Internet:</b> não precisa. Tudo roda no navegador.','<b>Som:</b> o jogo não tem som próprio. Ele reage à música do Ressonância.','<b>Se aparecer erro de WebGL:</b> o navegador ou a placa não suporta 3D. Ative a aceleração de hardware nas configurações do navegador.'],
+      help:[
+        {h:'O lugar',p:'Uma ilha pequena cercada de água, com árvores macias, lanternas de papel, pedras de caminho, um banco e um cais com barquinho. É um lugar para descansar, sem pontos nem objetivos. Inspirado na calma desse tipo de refúgio, com arte própria.'},
+        {h:'Controles',ul:['<b>Andar:</b> WASD ou setas. No celular, o joystick à esquerda.','<b>Câmera:</b> arraste com o mouse ou o dedo. A roda do mouse aproxima e afasta.','<b>Pular:</b> Espaço. <b>Sentar:</b> E (perto do banco, ou onde estiver).','<b>Passar o tempo:</b> segure N para acelerar o dia e a noite.','<b>Sair:</b> Esc ou o botão ← Jogos.','Clique dentro do jogo para ele receber o teclado.']},
+        {h:'O Santuário do Som',ul:['Na ponta do caminho há uma plataforma com cristais: é o reator da música.','Os cristais sobem e descem com as faixas de frequência, a esfera pulsa na batida e a cor da luz muda com a intensidade.','<b>Sentar no banco</b> faz a câmera se virar devagar para o santuário, para você curtir a música sem perder a imersão.','Sem música tocando, o santuário fica adormecido, só respirando.']},
+        {h:'Dia e noite',ul:['O ciclo completo leva uns 15 minutos.','À noite aparecem vagalumes, estrelas, a lua e as lanternas acendem. De dia, borboletas.','Perto da água a personagem deixa ondinhas.']}]}
   ];
   const gm=$('#games'),list=$('#gmList'),note=$('#gmNote'),ht=$('#howto');
   function topEdge(){const t=$('.top');const r=t?t.getBoundingClientRect():null;return Math.round(r?r.bottom:56)}
@@ -3335,7 +3361,7 @@ const NBG={open:false};
   function renderGames(){
     list.replaceChildren();
     for(const g of GAMES){
-      const on=g.id==='dino'?Gm.on:NBG.open;
+      const on=g.id==='dino'?Gm.on:(NBG.open&&NBG.id===g.id);
       const card=document.createElement('div');card.className='gcard'+(on?' on':'');
       const main=document.createElement('button');main.type='button';main.className='gmain';main.dataset.g=g.id;
       main.setAttribute('aria-label',(on?'Parar ':'Jogar ')+g.name);
@@ -3365,28 +3391,35 @@ const NBG={open:false};
     ['--bg','--fg','--mute','--line','--panel','--chip','--accent','--veil-a','--veil-b','--dim','--display','--mono'].forEach(k=>{vars[k]=cs.getPropertyValue(k).trim()});
     try{f.contentWindow.postMessage({rz:'theme',vars,dark:isDark()},'*')}catch(e){}
   }
-  function nbOpen(){
+  const NBSRC={nb:()=>'neonbreach/index.html?t='+(isDark()?'dark':'light'),ilha:()=>'ilha/index.html'};
+  function nbOpen(id){
+    id=NBSRC[id]?id:'nb';
     if(MP.race||MP.phase==='count'||Gm.mp){say_('Termine a corrida em sala antes de abrir outro jogo.');return}
     if(Gm.on)setGame(false);
     closeGames();
     const st=$('#nbStage'),f=$('#nbFrame');
-    layout();st.hidden=false;NBG.open=true;
+    layout();st.hidden=false;NBG.open=true;NBG.id=id;st.classList.toggle('solid',id==='ilha');f.title=id==='ilha'?'Ilha de Repouso':'Neon Breach';
     f.onload=()=>{try{f.contentWindow.focus()}catch(e){}};
-    f.src='neonbreach/index.html?t='+(isDark()?'dark':'light');
+    f.src=NBSRC[id]();
     syncGameUI();wake();
   }
   function nbClose(){
     if(!NBG.open)return;
-    const f=$('#nbFrame');NBG.open=false;$('#nbStage').hidden=true;f.onload=null;f.src='about:blank';
+    const f=$('#nbFrame');NBG.open=false;NBG.id='';$('#nbStage').hidden=true;f.onload=null;f.src='about:blank';
     syncGameUI();
   }
+  /* a ilha recebe o áudio já analisado (o canvas das skins fica pausado) */
+  window.nbAudio=function(){
+    const f=$('#nbFrame');if(!f||!f.contentWindow)return;
+    try{f.contentWindow.postMessage({rz:'audio',b:Array.from(A.bands),bass:A.bass,mid:A.mid,treb:A.treb,level:A.level,pulse:A.pulse,beatN:A.beatN,beatStr:A.beatStr},'*')}catch(e){}
+  };
   window.nbOpen=nbOpen;window.nbClose=nbClose;window.nbTheme=nbTheme;window.nbLayout=layout;
   function play(id){
     if(id==='dino'){
       if(NBG.open)nbClose();
       if(Gm.on){if(!Gm.mp)setGame(false)}else setGame(true);
       closeGames();
-    }else{if(NBG.open){closeGames();return}nbOpen()}
+    }else{if(NBG.open&&NBG.id===id){closeGames();return}nbOpen(id)}
   }
   list.addEventListener('click',e=>{
     const h=e.target.closest('.ghelp');if(h){openHelp(h.dataset.g);return}

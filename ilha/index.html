@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ilha de Repouso</title>
+<link rel="stylesheet" href="../neonbreach/css/fonts.css">
+<style>
+:root{color-scheme:dark;--fg:#f4f2ee;--mute:rgba(244,242,238,.62);--line:rgba(255,255,255,.18);--glass:rgba(14,16,28,.42)}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#0a0d18;color:var(--fg);font-family:'DM Mono',ui-monospace,monospace;-webkit-user-select:none;user-select:none;touch-action:none}
+canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;outline:none}
+.hud{position:fixed;z-index:3;display:flex;gap:8px;align-items:center}
+.chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--glass);color:var(--fg);font:500 11.5px/1 'DM Mono',monospace;letter-spacing:.06em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+button.chip{cursor:pointer}button.chip:hover{border-color:var(--fg)}
+#hTL{top:12px;left:12px}#hTR{top:12px;right:12px}
+#clock i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffd98a;box-shadow:0 0 8px #ffd98a}
+#hint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;text-align:center;max-width:92vw;transition:opacity 1.2s}
+#hint.off{opacity:0;pointer-events:none}
+#msg{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:24px;z-index:5;font:500 14px/1.5 'DM Mono',monospace;color:var(--mute)}
+#load{position:fixed;inset:0;display:grid;place-items:center;z-index:4;background:#0a0d18;font:500 12px 'DM Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);transition:opacity .8s}
+#load.off{opacity:0;pointer-events:none}
+#joy{position:fixed;left:22px;bottom:26px;width:116px;height:116px;border-radius:50%;border:1px solid var(--line);background:var(--glass);z-index:3;display:none}
+#joy i{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px;border-radius:50%;background:rgba(255,255,255,.28);border:1px solid var(--line)}
+#act{position:fixed;right:22px;bottom:34px;z-index:3;display:none;gap:10px}
+body.touch #joy{display:block}body.touch #act{display:flex}body.touch #hint .kb{display:none}
+.rb{width:56px;height:56px;border-radius:50%;padding:0;justify-content:center}
+</style>
+</head>
+<body>
+<canvas id="c" tabindex="0"></canvas>
+<div class="hud" id="hTL"><button class="chip" id="bBack" type="button">← Jogos</button></div>
+<div class="hud" id="hTR"><span class="chip" id="clock"><i></i><span id="clockT">Entardecer</span></span><button class="chip" id="bQ" type="button" title="Qualidade gráfica">Qualidade: auto</button></div>
+<div id="hint" class="chip"><span class="kb">WASD mover · arraste para girar a câmera · roda do mouse: zoom · Espaço pular · E sentar · N acelera o tempo</span><span class="tc" style="display:none">Use o botão da esquerda para andar e arraste para girar a câmera</span></div>
+<div id="joy"><i></i></div>
+<div id="act"><button class="chip rb" id="aJump" type="button">pular</button><button class="chip rb" id="aSit" type="button">sentar</button></div>
+<div id="load">Acordando a ilha…</div>
+<div id="msg">Seu navegador não conseguiu iniciar o 3D (WebGL).<br>Tente atualizar o navegador ou ativar a aceleração por hardware.</div>
+<script src="js/three.min.js"></script>
+<script src="js/world.js"></script>
+</body>
+</html>
