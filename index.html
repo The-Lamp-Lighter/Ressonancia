@@ -646,7 +646,8 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
     <h3>Ilha de Repouso</h3>
     <ul>
       <li>Um mundo 3D calmo: uma ilha pequena cercada de água, com dia e noite lentos. É <b>pesado</b> (pede placa de vídeo decente); o botão Qualidade no canto ajuda.</li>
-      <li><b>Andar:</b> WASD ou setas (joystick no celular). <b>Câmera:</b> arrastar. <b>Pular:</b> Espaço. <b>Sentar:</b> E. <b>Acelerar o tempo:</b> N. <b>Sair:</b> Esc.</li>
+      <li><b>Andar:</b> WASD ou setas (joystick no celular). <b>Câmera:</b> arrastar. <b>Correr:</b> Shift. <b>Pular:</b> Espaço (segure para planar). <b>Sentar:</b> E. <b>Gestos:</b> Q e R. <b>Guarda-roupa:</b> C. <b>Acelerar o tempo:</b> N. <b>Sair:</b> Esc.</li>
+      <li>Você controla a <b>Lyra</b> (visual de desenho animado). Colete presentes brilhantes para ganhar cosméticos: roupas e acessórios, enfeites da ilha e efeitos para o site (pétalas, vagalumes).</li>
       <li>No fim do caminho fica o <b>Santuário do Som</b>: cristais e luz que reagem à música. Sentar no banco vira a câmera para ele.</li>
       <li>Enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina.</li>
     </ul>
@@ -3324,7 +3325,7 @@ const NBG={open:false,id:''};
   const GAMES=[
     {id:'dino',name:'Dinossauro',blurb:'Corrida infinita por cima das ondas. Os obstáculos chegam no ritmo da música.',tags:['Solo','Salas com amigos','Leve'],cover:dinoCover,sym:symDino,
       perf:'Leve',
-      req:['<b>Máquina:</b> o jogo em si é bem leve (desenho 2D simples). O que pesa de verdade é o visualizador rodando atrás, e isso depende da skin escolhida.','<b>Celular:</b> funciona, com toque na tela para pular e segurar para abaixar.','<b>Teclado:</b> opcional.','<b>Internet:</b> só para as salas com amigos (mesma rede). Jogando sozinho, não precisa.','<b>Som:</b> o jogo não tem som próprio. Ele segue a música que estiver tocando.','<b>Se travar:</b> escolha uma skin mais simples ou reduza o tremor da interface.'],
+      req:['<b>Tamanho:</b> a personagem tem cerca de 4,5 MB, então a primeira abertura baixa um pouco mais.','<b>Máquina:</b> o jogo em si é bem leve (desenho 2D simples). O que pesa de verdade é o visualizador rodando atrás, e isso depende da skin escolhida.','<b>Celular:</b> funciona, com toque na tela para pular e segurar para abaixar.','<b>Teclado:</b> opcional.','<b>Internet:</b> só para as salas com amigos (mesma rede). Jogando sozinho, não precisa.','<b>Som:</b> o jogo não tem som próprio. Ele segue a música que estiver tocando.','<b>Se travar:</b> escolha uma skin mais simples ou reduza o tremor da interface.'],
       help:[
         {h:'O jogo',p:'Um dinossauro corre sem parar por cima das ondas. Cactos e aves chegam no ritmo da música: quanto mais rápida a batida, mais rápido o jogo.'},
         {h:'Controles',ul:['<b>Pular:</b> Espaço, seta para cima, W ou toque na tela.','<b>Abaixar:</b> seta para baixo, S, ou segurar o toque.','<b>Pausar:</b> P ou o botão de pausa no topo.','<b>Recomeçar:</b> Enter ou Espaço depois de perder.','<b>Ligar e desligar direto:</b> tecla G.']},
@@ -3345,8 +3346,10 @@ const NBG={open:false,id:''};
       perf:'Pesado',
       req:['<b>Máquina:</b> é um mundo 3D de verdade (WebGL), com água, sombras, milhares de folhas de grama e luzes. Pede <b>placa de vídeo</b> decente ou um celular/computador recente. Em PC fraco ou celular antigo pode ficar travando.','<b>Qualidade:</b> o jogo começa se ajustando sozinho. O botão <b>Qualidade</b> no canto alterna entre baixa, média e alta. Se travar, deixe em baixa.','<b>Visualizador:</b> enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina. A análise do som continua, e é ela que move o reator.','<b>Celular:</b> funciona, com joystick na tela e arrastar para girar a câmera. A bateria pode esquentar.','<b>Internet:</b> não precisa. Tudo roda no navegador.','<b>Som:</b> o jogo não tem som próprio. Ele reage à música do Ressonância.','<b>Se aparecer erro de WebGL:</b> o navegador ou a placa não suporta 3D. Ative a aceleração de hardware nas configurações do navegador.'],
       help:[
+        {h:'A Lyra',p:'Você controla a Lyra, uma personagem com visual de desenho animado (cel shading, só nela) e movimentos suaves que reagem a andar, correr, pular, planar e sentar. O cabelo balança com o movimento.'},
+        {h:'Presentes e cosméticos',p:'Pela ilha há presentes brilhantes. Cada um traz um cosmético: acessórios e roupinhas para a Lyra, enfeites para a ilha (luzes, pipa, fogueira, cogumelos) e efeitos para o site (pétalas e vagalumes). Tudo fica guardado só neste navegador.'},
         {h:'O lugar',p:'Uma ilha pequena cercada de água, com árvores macias, lanternas de papel, pedras de caminho, um banco e um cais com barquinho. É um lugar para descansar, sem pontos nem objetivos. Inspirado na calma desse tipo de refúgio, com arte própria.'},
-        {h:'Controles',ul:['<b>Andar:</b> WASD ou setas. No celular, o joystick à esquerda.','<b>Câmera:</b> arraste com o mouse ou o dedo. A roda do mouse aproxima e afasta.','<b>Pular:</b> Espaço. <b>Sentar:</b> E (perto do banco, ou onde estiver).','<b>Passar o tempo:</b> segure N para acelerar o dia e a noite.','<b>Sair:</b> Esc ou o botão ← Jogos.','Clique dentro do jogo para ele receber o teclado.']},
+        {h:'Controles',ul:['<b>Andar:</b> WASD ou setas. No celular, o joystick à esquerda.','<b>Câmera:</b> arraste com o mouse ou o dedo. A roda do mouse aproxima e afasta.','<b>Correr:</b> segure Shift. <b>Pular:</b> Espaço; segure Espaço no ar para planar. <b>Sentar:</b> E (perto do banco, ou onde estiver). <b>Gestos:</b> Q acena, R gira.','<b>Guarda-roupa:</b> tecla C (ou o botão no canto).','<b>Passar o tempo:</b> segure N para acelerar o dia e a noite.','<b>Sair:</b> Esc ou o botão ← Jogos.','Clique dentro do jogo para ele receber o teclado.']},
         {h:'O Santuário do Som',ul:['Na ponta do caminho há uma plataforma com cristais: é o reator da música.','Os cristais sobem e descem com as faixas de frequência, a esfera pulsa na batida e a cor da luz muda com a intensidade.','<b>Sentar no banco</b> faz a câmera se virar devagar para o santuário, para você curtir a música sem perder a imersão.','Sem música tocando, o santuário fica adormecido, só respirando.']},
         {h:'Dia e noite',ul:['O ciclo completo leva uns 15 minutos.','À noite aparecem vagalumes, estrelas, a lua e as lanternas acendem. De dia, borboletas.','Perto da água a personagem deixa ondinhas.']}]}
   ];
@@ -3450,10 +3453,32 @@ const NBG={open:false,id:''};
   ht.addEventListener('click',e=>{if(e.target===ht)ht.hidden=true});
   $('#gmClose').addEventListener('click',closeGames);
   /* mensagens vindas do jogo (só aceitas do nosso quadro) */
+
+/* efeitos do site ligados pela Ilha de Repouso (pétalas e vagalumes) */
+(()=>{
+  const F={petals:false,flies:false};
+  try{const r=JSON.parse(localStorage.getItem('ilha.v2')||'{}'),o=r.site||{},w=r.own||[];F.petals=!!o.petals&&w.includes('petals');F.flies=!!o.flies&&w.includes('flies')}catch(_){}
+  const cv=document.createElement('canvas');cv.id='fxc';cv.setAttribute('aria-hidden','true');cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none';
+  document.body.appendChild(cv);const cx=cv.getContext('2d');let W=0,H=0,P=[],Q=[],raf=0,last=0;
+  const rs=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight};addEventListener('resize',rs);rs();
+  const mk=()=>{while(P.length<(F.petals?26:0))P.push({x:Math.random()*W,y:Math.random()*H,s:3+Math.random()*4,v:18+Math.random()*26,w:Math.random()*6,r:Math.random()*6});
+    P.length=Math.min(P.length,F.petals?26:0);
+    while(Q.length<(F.flies?18:0))Q.push({x:Math.random()*W,y:Math.random()*H,a:Math.random()*6,t:Math.random()*6});Q.length=Math.min(Q.length,F.flies?18:0)};
+  function tick(ts){raf=requestAnimationFrame(tick);const dt=Math.min(.05,(ts-last)/1000||.016);last=ts;
+    if(typeof NBG!=='undefined'&&NBG.open){cx.clearRect(0,0,W,H);return}
+    cx.clearRect(0,0,W,H);const dk=isDark();
+    for(const p of P){p.y+=p.v*dt;p.w+=dt;p.x+=Math.sin(p.w)*14*dt+8*dt;p.r+=dt*1.5;if(p.y>H+10){p.y=-10;p.x=Math.random()*W}if(p.x>W+10)p.x=-10;
+      cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.scale(1,.6+.4*Math.sin(p.w*2));cx.fillStyle=dk?'rgba(255,190,215,.55)':'rgba(240,140,175,.6)';cx.beginPath();cx.ellipse(0,0,p.s,p.s*.6,0,0,6.3);cx.fill();cx.restore()}
+    for(const q of Q){q.t+=dt;q.a+=(Math.random()-.5)*dt*3;q.x+=Math.cos(q.a)*14*dt;q.y+=Math.sin(q.a)*14*dt;if(q.x<0)q.x=W;if(q.x>W)q.x=0;if(q.y<0)q.y=H;if(q.y>H)q.y=0;
+      const g=.5+.5*Math.sin(q.t*2);cx.fillStyle=(dk?'rgba(255,240,150,':'rgba(230,190,60,')+(.2+.6*g).toFixed(2)+')';cx.shadowColor=dk?'#ffe98a':'#e6b83c';cx.shadowBlur=dk?12:6;cx.beginPath();cx.arc(q.x,q.y,2,0,6.3);cx.fill();cx.shadowBlur=0}}
+  window.siteFx=f=>{if(f){F.petals=!!f.petals;F.flies=!!f.flies}mk();const on=F.petals||F.flies;cv.style.display=on?'block':'none';if(on&&!raf){last=performance.now();raf=requestAnimationFrame(tick)}else if(!on&&raf){cancelAnimationFrame(raf);raf=0;cx.clearRect(0,0,W,H)}};
+  window.siteFx();
+})();
   addEventListener('message',e=>{
     const f=$('#nbFrame'),d=e.data;
     if(!d||typeof d!=='object'||!f||e.source!==f.contentWindow)return;
     if(d.nb==='ready')nbTheme();
+    else if(d.nb==='site'){window.siteFx(d.fx||{})}
     else if(d.nb==='exit'){nbClose();openGames()}
   });
   addEventListener('resize',()=>{if(NBG.open||!gm.hidden)layout()});
