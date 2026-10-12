@@ -29,14 +29,15 @@
   scene.fog = new T.Fog(0xcfe6ff, 70, 330);
 
   /* ───────── terreno ───────── */
-  const shoreR = th => 32 * (1 + 0.1 * Math.sin(3 * th + 1.2) + 0.06 * Math.sin(5 * th + 0.4) + 0.04 * Math.sin(8 * th));
-  const PLAT = { x: 0, z: -12, r: 6.3, top: 0.62 }, JET = { x0: 31.5, x1: 42, hw: 1.15, y: 0.34 };
+  const shoreR = th => 52 * (1 + 0.1 * Math.sin(3 * th + 1.2) + 0.06 * Math.sin(5 * th + 0.4) + 0.04 * Math.sin(8 * th));
+  const PLAT = { x: 0, z: -12, r: 6.3, top: 0.62 }, JET = { x0: 51.2, x1: 62, hw: 1.15, y: 0.34 };
   function baseH(x, z) {
     const r = Math.hypot(x, z), th = Math.atan2(z, x), d = shoreR(th) - r;
     let h = Math.min(d * 0.3, 1.45);
     if (d > 0) h += (Math.sin(x * 0.21) * Math.cos(z * 0.17) * 0.3 + Math.sin(x * 0.09 + z * 0.11) * 0.38) * smooth(0, 9, d);
     const pd = Math.hypot(x - PLAT.x, z - PLAT.z);
     h += 1.35 * Math.exp(-((x - 16) * (x - 16) + (z - 14) * (z - 14)) / 40) * smooth(0, 5, d);
+    h += 1.7 * Math.exp(-((x + 30) * (x + 30) + (z - 24) * (z - 24)) / 70) * smooth(0, 6, d) + 1.4 * Math.exp(-((x - 27) * (x - 27) + (z + 28) * (z + 28)) / 55) * smooth(0, 6, d);
     h = lerp(h, PLAT.top - 0.05, smooth(11, 6.4, pd));
     return Math.max(h, -2.6);
   }
@@ -50,7 +51,7 @@
   const rnd = mulberry(20261010);
 
   const terr = (() => {
-    const N = 250, S = 126, g = new T.PlaneGeometry(S, S, N, N); g.rotateX(-Math.PI / 2);
+    const N = 340, S = 170, g = new T.PlaneGeometry(S, S, N, N); g.rotateX(-Math.PI / 2);
     const p = g.attributes.position, col = new Float32Array(p.count * 3), c = new T.Color();
     const sand = new T.Color('#f3e3b9'), wet = new T.Color('#d8c28f'), floor = new T.Color('#9fd3c7'), deep = new T.Color('#5aa7ad');
     const g1 = new T.Color('#86cf8d'), g2 = new T.Color('#b4e590'), g3 = new T.Color('#6dbb86');
@@ -113,7 +114,7 @@
     transparent: true, depthWrite: false, uniforms: Object.assign({ uFogN: { value: 70 }, uFogF: { value: 330 } }, U),
     vertexShader: 'varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
     fragmentShader: `uniform float uTime,uNight,uFogN,uFogF;uniform vec3 uSunDir,uMoonDir,uSunCol,uTop,uHor,uDeep,uShallow,uFog,uPl;varying vec3 vW;
-      float shoreR(float th){return 32.*(1.+.1*sin(3.*th+1.2)+.06*sin(5.*th+.4)+.04*sin(8.*th));}
+      float shoreR(float th){return 52.*(1.+.1*sin(3.*th+1.2)+.06*sin(5.*th+.4)+.04*sin(8.*th));}
       float hs(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hs(i),hs(i+vec2(1,0)),f.x),mix(hs(i+vec2(0,1)),hs(i+vec2(1,1)),f.x),f.y);}
       void main(){vec2 xz=vW.xz;float r=length(xz),th=atan(xz.y,xz.x),dist=r-shoreR(th);
@@ -156,10 +157,10 @@
 
   /* ───────── árvores, pedras, lanternas ───────── */
   const lamps = [];  /* {mat, spr, base} */
-  const RESV = [[-7.5, 5, 4], [9, -6, 4], [-4.6, -6.2, 2], [4.6, -6.2, 2], [16, 14, 3.4]];
+  const RESV = [[-7.5, 5, 4], [9, -6, 4], [-4.6, -6.2, 2], [4.6, -6.2, 2], [16, 14, 3.4], [-30, 24, 3.4], [27, -28, 3.4]];
   const resv = (x, z, k = 0) => RESV.some(r => Math.hypot(x - r[0], z - r[1]) < r[2] + k);
   const pathX = z => Math.sin(z * 0.28) * 1.3;
-  function inCorridor(x, z, w) { return z > -7 && z < 34 && Math.abs(x - pathX(z)) < w; }
+  function inCorridor(x, z, w) { return z > -7 && z < 56 && Math.abs(x - pathX(z)) < w; }
   const leafCols = ['#7ed39a', '#9be08a', '#6fc8a0', '#f6b6cf', '#a8e3b0'];
   function makeTree(x, z, s, kind) {
     const g = new T.Group(), y = groundH(x, z);
@@ -173,31 +174,31 @@
     return g;
   }
   const trees = [];
-  for (let k = 0, tries = 0; k < 27 && tries < 1200; tries++) {
-    const a = rnd() * TAU, d = 3 + rnd() * 29, x = Math.cos(a) * d, z = Math.sin(a) * d;
+  for (let k = 0, tries = 0; k < 72 && tries < 4000; tries++) {
+    const a = rnd() * TAU, d = 3 + rnd() * 49, x = Math.cos(a) * d, z = Math.sin(a) * d;
     if (baseH(x, z) < 0.75 || Math.hypot(x, z) > shoreR(Math.atan2(z, x)) - 3.5) continue;
     if (inCorridor(x, z, 5.2) || resv(x, z) || Math.hypot(x - PLAT.x, z - PLAT.z) < 9.5) continue;
     if (trees.some(t => Math.hypot(t.x - x, t.z - z) < 4.6)) continue;
     const s = 0.8 + rnd() * 0.6; trees.push({ x, z, s }); makeTree(x, z, s, rnd() < 0.3 ? 'blossom' : 'normal'); k++;
   }
   /* árvore-guardiã perto da praia de chegada */
-  makeTree(-8.5, 9, 1.55, 'blossom'); makeTree(12.6, 12.4, 1.3, 'normal');
+  makeTree(-8.5, 9, 1.55, 'blossom'); makeTree(12.6, 12.4, 1.3, 'normal'); makeTree(-30, 24, 1.7, 'blossom'); makeTree(27, -28, 1.5, 'normal'); makeTree(-9, 33, 1.4, 'blossom'); makeTree(8, 41, 1.3, 'normal');
   function rock(x, z, s) {
     const m = shadowy(new T.Mesh(new T.DodecahedronGeometry(0.7 * s, 0), std(rnd() < 0.5 ? '#c6c0d6' : '#b8c6d0', 1)));
     m.position.set(x, groundH(x, z) + 0.15 * s, z); m.scale.set(1.2, 0.7 + rnd() * 0.3, 1); m.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); scene.add(m); colliders.push({ x, z, r: 0.75 * s });
   }
-  for (let k = 0, tries = 0; k < 24 && tries < 700; tries++) {
-    const a = rnd() * TAU, d = 8 + rnd() * 25, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
+  for (let k = 0, tries = 0; k < 62 && tries < 1800; tries++) {
+    const a = rnd() * TAU, d = 8 + rnd() * 42, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
     if (h < -0.2 || h > 1.0 || inCorridor(x, z, 3) || resv(x, z) || Math.hypot(x - PLAT.x, z - PLAT.z) < 7.5) continue; rock(x, z, 0.5 + rnd() * 0.9); k++;
   }
   /* arbustos */
-  for (let k = 0, tries = 0; k < 28 && tries < 800; tries++) {
-    const a = rnd() * TAU, d = 4 + rnd() * 26, x = Math.cos(a) * d, z = Math.sin(a) * d;
+  for (let k = 0, tries = 0; k < 80 && tries < 2400; tries++) {
+    const a = rnd() * TAU, d = 4 + rnd() * 44, x = Math.cos(a) * d, z = Math.sin(a) * d;
     if (baseH(x, z) < 0.7 || inCorridor(x, z, 2.2) || resv(x, z, -1) || Math.hypot(x - PLAT.x, z - PLAT.z) < 8) continue;
     const b = shadowy(new T.Mesh(new T.IcosahedronGeometry(0.6 + rnd() * 0.4, 1), std(leafCols[(rnd() * 5) | 0], 1))); b.position.set(x, groundH(x, z) + 0.3, z); b.scale.y = 0.75; scene.add(b); k++;
   }
   /* pedras de passagem */
-  for (let z = 27; z > -5.5; z -= 1.35) {
+  for (let z = 49; z > -5.5; z -= 1.35) {
     const x = pathX(z) + (rnd() - 0.5) * 0.4, m = shadowy(new T.Mesh(new T.CylinderGeometry(0.5 + rnd() * 0.12, 0.56, 0.14, 9), std('#e7dfd0', 1)), false, true);
     m.position.set(x, groundH(x, z) + 0.05, z); m.rotation.y = rnd() * 3; scene.add(m);
   }
@@ -211,7 +212,7 @@
     const spr = glow(0xffb15a, 2.4, 0); spr.position.y = h + 0.3; g.add(spr);
     scene.add(g); lamps.push({ mat, spr }); colliders.push({ x, z, r: 0.28 });
   }
-  [[2.6, 24], [-2.7, 19], [2.6, 14], [-2.6, 9], [2.8, 4], [-2.8, -0.5], [2.6, -4.2]].forEach(([dx, z]) => lantern(pathX(z) + dx, z));
+  [[2.6, 48], [-2.7, 43], [2.6, 38], [-2.6, 33], [2.7, 28.5], [2.6, 24], [-2.7, 19], [2.6, 14], [-2.6, 9], [2.8, 4], [-2.8, -0.5], [2.6, -4.2]].forEach(([dx, z]) => lantern(pathX(z) + dx, z));
   lantern(JET.x1 - 0.5, 1.0, 2.2);
   /* banco virado para o santuário */
   const BENCH = { x: 0.2, z: -3.3 }; BENCH.y = groundH(BENCH.x, BENCH.z);
@@ -249,10 +250,10 @@
         vec3 ip=vec3(instanceMatrix[3][0],0.,instanceMatrix[3][2]);float k=pow(position.y/.62,1.6);
         transformed.x+=sin(uWind*1.6+ip.x*.45+ip.z*.3)*.2*k;transformed.z+=cos(uWind*1.3+ip.z*.5)*.14*k;`);
     };
-    const MAXN = 12500, im = new T.InstancedMesh(geo, mat, MAXN), m4 = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), c = new T.Color(); let n = 0;
+    const MAXN = 30000, im = new T.InstancedMesh(geo, mat, MAXN), m4 = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), c = new T.Color(); let n = 0;
     const cA = new T.Color('#79c98b'), cB = new T.Color('#b3e58f'), cC = new T.Color('#5db07f');
-    for (let t = 0; t < 60000 && n < MAXN; t++) {
-      const a = rnd() * TAU, d = Math.sqrt(rnd()) * 36, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
+    for (let t = 0; t < 150000 && n < MAXN; t++) {
+      const a = rnd() * TAU, d = Math.sqrt(rnd()) * 57, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
       if (h < 0.55 || inCorridor(x, z, 0.9) || resv(x, z, -1.6) || Math.hypot(x - PLAT.x, z - PLAT.z) < PLAT.r + 1.4 || (z < -2.5 && z > -9 && Math.abs(x) < 1.8)) continue;
       e.set((rnd() - 0.5) * 0.3, rnd() * TAU, (rnd() - 0.5) * 0.3); q.setFromEuler(e);
       const s = 0.7 + rnd() * 0.7; m4.compose(new T.Vector3(x, h - 0.02, z), q, new T.Vector3(s, s * (0.45 + rnd() * 0.4), s)); im.setMatrixAt(n, m4);
@@ -260,10 +261,10 @@
     }
     im.count = n; im.receiveShadow = true; scene.add(im);
     /* flores */
-    const fg = new T.IcosahedronGeometry(0.11, 0), fm = new T.MeshStandardMaterial({ roughness: 0.7, emissive: 0x000000 }), FN = 560, fi = new T.InstancedMesh(fg, fm, FN);
+    const fg = new T.IcosahedronGeometry(0.11, 0), fm = new T.MeshStandardMaterial({ roughness: 0.7, emissive: 0x000000 }), FN = 1500, fi = new T.InstancedMesh(fg, fm, FN);
     const fc = ['#ffffff', '#ffd1e3', '#ffe28a', '#c7b8ff', '#ffb4a8']; let k = 0;
-    for (let t = 0; t < 4000 && k < FN; t++) {
-      const a = rnd() * TAU, d = Math.sqrt(rnd()) * 33, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
+    for (let t = 0; t < 12000 && k < FN; t++) {
+      const a = rnd() * TAU, d = Math.sqrt(rnd()) * 54, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
       if (h < 0.6 || inCorridor(x, z, 0.8) || Math.hypot(x - PLAT.x, z - PLAT.z) < PLAT.r + 0.5) continue;
       m4.compose(new T.Vector3(x, h + 0.22 + rnd() * 0.12, z), q.identity(), new T.Vector3(1, 1, 1).multiplyScalar(0.8 + rnd() * 0.8)); fi.setMatrixAt(k, m4); c.set(fc[(rnd() * 5) | 0]); fi.setColorAt(k, c); k++;
     }
@@ -272,17 +273,17 @@
 
   /* vaga-lumes (noite) e borboletas (dia) */
   const flies = (() => {
-    const N = 130, g = new T.BufferGeometry(), pos = new Float32Array(N * 3), seed = [];
-    for (let i = 0; i < N; i++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * 32; seed.push([a, d, 0.8 + rnd() * 3, rnd() * 9, 0.3 + rnd() * 0.7]); }
+    const N = 220, g = new T.BufferGeometry(), pos = new Float32Array(N * 3), seed = [];
+    for (let i = 0; i < N; i++) { const a = rnd() * TAU, d = Math.sqrt(rnd()) * 50; seed.push([a, d, 0.8 + rnd() * 3, rnd() * 9, 0.3 + rnd() * 0.7]); }
     g.setAttribute('position', new T.BufferAttribute(pos, 3));
     const m = new T.PointsMaterial({ map: glowTex, color: 0xd8ff9a, size: 0.55, transparent: true, depthWrite: false, blending: T.AdditiveBlending, opacity: 0 });
     const p = new T.Points(g, m); p.frustumCulled = false; scene.add(p); return { p, seed, pos, g, m };
   })();
   const butter = [];
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < 16; i++) {
     const g = new T.Group(), mat = new T.MeshBasicMaterial({ color: ['#ffd1e3', '#ffe28a', '#c7e8ff'][i % 3], side: T.DoubleSide, transparent: true, opacity: 0.95 });
     const w1 = new T.Mesh(new T.CircleGeometry(0.16, 8), mat), w2 = new T.Mesh(new T.CircleGeometry(0.16, 8), mat); w1.position.x = -0.15; w2.position.x = 0.15; g.add(w1, w2);
-    g.userData = { a: rnd() * TAU, d: 4 + rnd() * 24, sp: 0.15 + rnd() * 0.2, h: 1.1 + rnd() * 1.3, w1, w2, ph: rnd() * 9 }; butter.push(g); scene.add(g);
+    g.userData = { a: rnd() * TAU, d: 4 + rnd() * 42, sp: 0.15 + rnd() * 0.2, h: 1.1 + rnd() * 1.3, w1, w2, ph: rnd() * 9 }; butter.push(g); scene.add(g);
   }
 
   /* ───────── santuário do som ───────── */
@@ -338,7 +339,7 @@
   function rbq(name, q) { const r = hero.rest[name]; if (!r) return; tq2.copy(r.pqi).multiply(q).multiply(r.pq); r.b.quaternion.copy(tq2).multiply(r.q); }
   /* desloca um osso (em cm, no espaço do personagem) */
   function mb(name, dx, dy, dz) {
-    const r = hero.rest[name]; if (!r) return; tv.set(dx, dy, dz).applyQuaternion(r.pqi).divideScalar(r.ps); r.b.position.copy(r.p).add(tv);
+    const r = hero.rest[name]; if (!r) return; tv.set(dx, dy, dz).multiplyScalar(LS).applyQuaternion(r.pqi).divideScalar(r.ps); r.b.position.copy(r.p).add(tv);
   }
   /* prende um objeto a um osso: pos em cm no espaço do personagem, k = tamanho do mundo por unidade do objeto */
   function attachTo(bone, obj, pos, k) {
@@ -397,7 +398,7 @@
       while (hero.B[name]) {
         const b = hero.B[name], nxt = hero.B['J_Sec_Hair' + (k + 1) + '_' + id] || hero.B['J_Sec_Hair' + k + '_' + id + '_end']; if (!nxt) break;
         b.getWorldPosition(wp); nxt.getWorldPosition(wp2);
-        springs.push({ b, axis: nxt.position.clone().normalize(), len: wp.distanceTo(wp2), cur: wp2.clone(), prev: wp2.clone(), q: b.quaternion.clone(), k, stiff: lerp(1.0, 0.55, (k - 1) / 4), drag: 0.5 });
+        springs.push({ b, axis: nxt.position.clone().normalize(), len: wp.distanceTo(wp2), cur: wp2.clone(), prev: wp2.clone(), q: b.quaternion.clone(), k, stiff: lerp(0.5, 0.2, (k - 1) / 4), drag: 0.4 });
         name = 'J_Sec_Hair' + (k + 1) + '_' + id; k++;
       }
     }
@@ -414,7 +415,7 @@
       sq2.copy(sq).multiply(s.q); sn.copy(s.axis).applyQuaternion(sq2);
       if (!s.init) { s.cur.copy(sp2).addScaledVector(sn, s.len); s.prev.copy(s.cur); s.init = true; }
       sp3.copy(s.cur).sub(s.prev); { const vl = sp3.length(), mx = s.len * 0.45; if (vl > mx) sp3.multiplyScalar(mx / vl); } sp3.multiplyScalar(1 - s.drag).add(s.cur);
-      sp1.copy(sp2).addScaledVector(sn, s.len).sub(s.cur); sp3.addScaledVector(sp1, Math.min(1, s.stiff * dt * 4.2)); sp3.y -= grav * dt * s.len * 0.35;
+      sp1.copy(sp2).addScaledVector(sn, s.len).sub(s.cur); sp3.addScaledVector(sp1, Math.min(1, s.stiff * dt * 60)); sp3.y -= grav * dt * s.len * 0.9;
       sp3.sub(sp2); if (sp3.lengthSq() < 1e-10) sp3.copy(sn); sp3.normalize().multiplyScalar(s.len).add(sp2);
       s.prev.copy(s.cur); s.cur.copy(sp3);
       sp3.sub(sp2).normalize(); sq.setFromUnitVectors(sn, sp3);
@@ -424,7 +425,7 @@
     }
   }
 
-  const P = { x: pathX(27), z: 27, y: 0, vy: 0, yaw: Math.PI, vx: 0, vz: 0, phase: 0, sit: false, sitT: 0, ground: true, wade: 0, blink: 0, nextBlink: 2, squash: 0, jumpQ: 0, gliding: false, nearBench: false };
+  const P = { x: pathX(47), z: 47, y: 0, vy: 0, yaw: Math.PI, vx: 0, vz: 0, phase: 0, sit: false, sitT: 0, ground: true, wade: 0, blink: 0, nextBlink: 2, squash: 0, jumpQ: 0, gliding: false, nearBench: false };
   P.y = groundH(P.x, P.z);
 
   /* ───────── animação procedural: tudo suavizado por molas, sem cortes secos ───────── */
@@ -433,9 +434,10 @@
   const lp = (a, b, w) => a + (b - a) * w;
   const ease = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
   function startEmote(k) { if (P.sit || !P.ground) return; PS.emote = { k, t: 0, dur: k === 'wave' ? 2.4 : 1.25 }; }
+  const PLANT = [['J_Bip_L_ToeBase', 0.034], ['J_Bip_R_ToeBase', 0.034], ['J_Bip_L_Foot', 0.099], ['J_Bip_R_Foot', 0.099]];
   function poseStep(dt, t, spd, gh) {
     const s = PS, st = P.sitT, vyN = clamp(P.vy / 7, -1, 1);
-    s.move = ez(s.move, clamp(spd / 4.6, 0, 1.3), 10, dt); s.run = ez(s.run, clamp((spd - 4.8) / 2.4, 0, 1), 6, dt);
+    s.move = ez(s.move, clamp(spd / 3.4, 0, 1.3), 10, dt); s.run = ez(s.run, clamp((spd - 3.8) / 2.0, 0, 1), 6, dt);
     s.air = ez(s.air, P.ground ? 0 : 1, P.ground ? 14 : 18, dt); s.glide = ez(s.glide, P.gliding ? 1 : 0, 5, dt);
     s.land = Math.max(0, s.land - dt * 3.4); s.crouch = ez(s.crouch, P.jumpQ > 0 ? 1 : 0, P.jumpQ > 0 ? 22 : 14, dt);
     let dY = P.yaw - s.lastYaw; dY = Math.atan2(Math.sin(dY), Math.cos(dY)); s.lastYaw = P.yaw; s.turn = ez(s.turn, dY / Math.max(dt, 0.001), 8, dt);
@@ -444,7 +446,7 @@
     if (s.emote) { s.emote.t += dt; const u = s.emote.t / s.emote.dur; emoT = Math.sin(clamp(u, 0, 1) * Math.PI); if (spd > 0.6 || u >= 1) s.emote = null; else if (s.emote.k === 'spin') spin = ease(clamp(u * 1.15, 0, 1)) * TAU; }
     s.emo = ez(s.emo, s.emote ? 1 : 0, 9, dt);
     let wig = 0;
-    const mv = Math.min(1, s.move), A = lp(0.42, 0.78, s.run), ph = P.phase, sn = Math.sin(ph), idle = 1 - mv;
+    const mv = Math.min(1, s.move), A = lp(0.55, 0.85, s.run), ph = P.phase, sn = Math.sin(ph), idle = 1 - mv;
     const lf = Math.max(0, Math.cos(ph)), rf = Math.max(0, -Math.cos(ph)), kf = 0.55 + 0.7 * s.run;
     /* — chão — */
     let hL = -sn * A * mv + Math.sin(t * 0.5) * 0.03 * idle, hR = sn * A * mv - Math.sin(t * 0.5) * 0.03 * idle;
@@ -481,10 +483,10 @@
     /* — sentada (banco ou chão) — */
     if (st > 0.001) {
       const bn = P.nearBench ? 1 : 0, swing = Math.sin(t * 1.4) * 0.06;
-      hL = lp(hL, lp(-1.0, -1.5, bn), st); hR = lp(hR, lp(-0.95, -1.5, bn), st);
-      kL = lp(kL, lp(1.9, 1.5 + swing, bn), st); kR = lp(kR, lp(1.8, 1.5 - swing, bn), st);
+      hL = lp(hL, lp(-1.62, -1.5, bn), st); hR = lp(hR, lp(-1.57, -1.5, bn), st);
+      kL = lp(kL, lp(0.04, 1.5 + swing, bn), st); kR = lp(kR, lp(0.12, 1.5 - swing, bn), st);
       aLx = lp(aLx, -0.55, st); aRx = lp(aRx, -0.55, st); eL = lp(eL, -0.95, st); eR = lp(eR, -0.95, st); aLz = lp(aLz, -0.16, st); aRz = lp(aRz, 0.16, st);
-      spX = lp(spX, -0.04 + Math.sin(t * 1.2) * 0.012, st); spY = lp(spY, 0, st); spZ = lp(spZ, 0, st); pvY = lp(pvY, lp(0.15, 0.74, bn), st); pvRy = lp(pvRy, 0, st); pvRz = lp(pvRz, 0, st);
+      spX = lp(spX, -0.04 + Math.sin(t * 1.2) * 0.012, st); spY = lp(spY, 0, st); spZ = lp(spZ, 0, st); pvY = lp(pvY, lp(0.245, 0.74, bn), st); pvRy = lp(pvRy, 0, st); pvRz = lp(pvRz, 0, st);
     }
     /* — aplica nos ossos da Lyra — */
     if (!heroReady) { hero.g.position.set(P.x, P.y, P.z); hero.g.rotation.y = P.yaw; return; }
@@ -497,7 +499,7 @@
     const curl = clamp(0.32 + 0.35 * s.run + st * 0.15 - E * 0.25 - s.glide * 0.2, 0.05, 0.8);
     for (const [S, h2, k2, ax, az, el, sd] of legs) {
       rb('J_Bip_' + S + '_UpperLeg', h2, 0, 0); rb('J_Bip_' + S + '_LowerLeg', k2, 0, 0);
-      const ank = -h2 * 0.4 + k2 * 0.2 - (1 - st) * s.air * 0.25; rb('J_Bip_' + S + '_Foot', ank, 0, 0); rb('J_Bip_' + S + '_ToeBase', clamp(-ank * 0.5 + (s.air ? 0.3 : 0), -0.4, 0.5), 0, 0);
+      const ank = lp(-h2 * 0.4 + k2 * 0.2 - s.air * 0.25, P.nearBench ? 0.15 : -0.05, st); rb('J_Bip_' + S + '_Foot', ank, 0, 0); rb('J_Bip_' + S + '_ToeBase', clamp(-ank * 0.5 + (s.air ? 0.3 : 0), -0.4, 0.5), 0, 0);
       const wv = (sd === 1 && s.emote && s.emote.k === 'wave') ? wig : 0;
       rb('J_Bip_' + S + '_Shoulder', 0, 0, sd * (-0.03 - 0.05 * s.air - 0.05 * Math.sin(t * 1.8) * (1 - mv)));
       rb('J_Bip_' + S + '_UpperArm', ax, 0, az - sd * PIH);
@@ -520,6 +522,10 @@
     /* raiz */
     hero.g.rotation.y = P.yaw + spin; hero.g.rotation.z = ez(hero.g.rotation.z, -clamp(s.turn * 0.04, -0.2, 0.2) * mv, 8, dt);
     hero.g.position.set(P.x, P.y, P.z);
+    /* pés nunca atravessam o chão: sobe o corpo o quanto a sola passar do solo */
+    hero.g.updateMatrixWorld(true);
+    let low = 9; for (const [n, off] of PLANT) { const b = hero.B[n]; if (b) { b.getWorldPosition(tv); low = Math.min(low, tv.y - off - P.y); } }
+    const want = low < 0 ? -low : 0; s.plant = Math.max(want, ez(s.plant || 0, want, 20, dt)); hero.g.position.y = P.y + s.plant;
     springStep(dt);
   }
 
@@ -606,7 +612,7 @@
     if (im > 0.08) { if (P.sit) P.sit = false; }
     const sy = Math.sin(CAM.yaw), cy = Math.cos(CAM.yaw);
     const wx = (ix * cy + iz * sy), wz = (-ix * sy + iz * cy), wl = Math.hypot(wx, wz) || 1;
-    const runK = keys['shift'] ? 1 : joy.on ? clamp((im - 0.8) / 0.2, 0, 1) : 0, base = lerp(4.6, 7.2, runK) * (joy.on ? Math.min(1, im / 0.8) : 1) / (joy.on ? Math.max(im, 0.01) : 1);
+    const runK = keys['shift'] ? 1 : joy.on ? clamp((im - 0.8) / 0.2, 0, 1) : 0, base = lerp(3.4, 6.0, runK) * (joy.on ? Math.min(1, im / 0.8) : 1) / (joy.on ? Math.max(im, 0.01) : 1);
     const sp = (P.wade > 0.3 ? 3.2 : base * (P.gliding ? 1.25 : 1)) * im, tvx = wx / wl * sp * (im > 0.08 ? 1 : 0), tvz = wz / wl * sp * (im > 0.08 ? 1 : 0);
     const k = 1 - Math.exp(-dt * (P.sit ? 12 : 9)); P.vx += (tvx - P.vx) * k; P.vz += (tvz - P.vz) * k;
     /* movimento + colisão + borda da água */
@@ -624,7 +630,7 @@
     else { P.gliding = false; P.y += (Math.max(gh, -0.2) - P.y) * Math.min(1, dt * 18); if (Math.abs(P.y - Math.max(gh, -0.2)) < 0.02) P.y = Math.max(gh, -0.2); }
     P.wade = clamp((0.08 - gh) / 0.3, 0, 1) * (P.ground ? 1 : 0.3);
     const spd = Math.hypot(P.vx, P.vz);
-    if (spd > 0.25) { const ty = Math.atan2(P.vx, P.vz); let d = ty - P.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); P.yaw += d * (1 - Math.exp(-dt * 12)); P.phase += dt * (3.2 + spd * 1.5); }
+    if (spd > 0.25) { const ty = Math.atan2(P.vx, P.vz); let d = ty - P.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); P.yaw += d * (1 - Math.exp(-dt * 12)); P.phase += dt * Math.PI * Math.min(spd, 6.4) / (1.74 * Math.sin(lerp(0.55, 0.85, PS.run))); }
     P.squash *= Math.exp(-dt * 9);
     P.sitT += ((P.sit ? 1 : 0) - P.sitT) * (1 - Math.exp(-dt * 7));
     poseStep(dt, t, spd, gh);
@@ -686,23 +692,23 @@
   const SKEY = 'ilha.v2', SLOTS = { head: 'Cabeça', face: 'Rosto', back: 'Costas', neck: 'Pescoço', bottom: 'Saia', cape: 'Capa', decor: 'Ilha', site: 'Site' };
   const SLOTCOL = { head: 0xff9ad0, face: 0x9ad8ff, back: 0xc9a6ff, neck: 0xffb48a, bottom: 0xffe28a, cape: 0x8fe3b4, decor: 0xffd98a, site: 0xa8e6ff };
   const ITEMS = [
-    { id: 'crown', slot: 'head', name: 'Coroa de flores', spot: [-4, 23], hint: 'Perto de onde você chegou, entre as flores.' },
-    { id: 'cat', slot: 'head', name: 'Orelhas de gato', spot: [22, -14], hint: 'No lado leste da ilha, depois das pedras.' },
+    { id: 'crown', slot: 'head', name: 'Coroa de flores', spot: [-5, 44], hint: 'Perto de onde você chegou, entre as flores.' },
+    { id: 'cat', slot: 'head', name: 'Orelhas de gato', spot: [32, -20], hint: 'No lado leste da ilha, depois das pedras.' },
     { id: 'halo', slot: 'head', name: 'Halo de estrelas', spot: [0, -15.4], hint: 'Dentro do círculo do santuário, entre os cristais.' },
-    { id: 'glasses', slot: 'face', name: 'Óculos redondos', spot: [-21, -6], hint: 'No lado oeste, perto da praia.' },
-    { id: 'wings', slot: 'back', name: 'Asas de vidro', spot: [16.5, 14.5], hint: 'No ponto mais alto da ilha.' },
-    { id: 'lantern', slot: 'back', name: 'Lanterninha de costas', spot: [40, 0], hint: 'No fim do cais.' },
-    { id: 'scarf', slot: 'neck', name: 'Cachecol de lã', spot: [-6, -24], hint: 'No fundo da ilha, atrás do santuário.' },
-    { id: 'skirt', slot: 'bottom', name: 'Saia rodada', spot: [27, 13], hint: 'Na praia do sudeste.' },
-    { id: 'sunset', slot: 'cape', name: 'Capa Pôr do sol', spot: [-24, 12], hint: 'Na praia do oeste, depois da árvore grande.' },
+    { id: 'glasses', slot: 'face', name: 'Óculos redondos', spot: [-30, -9], hint: 'No lado oeste, perto da praia.' },
+    { id: 'wings', slot: 'back', name: 'Asas de vidro', spot: [-27, 24], hint: 'No topo da colina do oeste, o ponto mais alto.' },
+    { id: 'lantern', slot: 'back', name: 'Lanterninha de costas', spot: [60.5, 0], hint: 'No fim do cais comprido, a leste.' },
+    { id: 'scarf', slot: 'neck', name: 'Cachecol de lã', spot: [-9, -34], hint: 'No fundo da ilha, atrás do santuário.' },
+    { id: 'skirt', slot: 'bottom', name: 'Saia rodada', spot: [38, 18], hint: 'Na praia do sudeste.' },
+    { id: 'sunset', slot: 'cape', name: 'Capa Pôr do sol', spot: [-35, 17], hint: 'Na praia do oeste, depois da árvore grande.' },
     { id: 'forest', slot: 'cape', name: 'Capa Floresta', spot: [10, 6], hint: 'No gramado, ao lado do caminho.' },
-    { id: 'midnight', slot: 'cape', name: 'Capa Meia-noite', spot: [-18, -18], hint: 'Só aparece de noite.', night: true },
-    { id: 'lights', slot: 'decor', name: 'Varal de luzes', spot: [10, -18], hint: 'Ao norte, perto do santuário.' },
-    { id: 'kite', slot: 'decor', name: 'Pipa', spot: [-27, -2], hint: 'Onde venta mais, no extremo oeste.' },
-    { id: 'fire', slot: 'decor', name: 'Fogueirinha', spot: [30, -9], hint: 'Na faixa de areia do leste.' },
-    { id: 'shrooms', slot: 'decor', name: 'Cogumelos brilhantes', spot: [24, 22], hint: 'Só aparece de noite.', night: true },
-    { id: 'petals', slot: 'site', name: 'Pétalas no site', spot: [-12, -25], hint: 'Atrás do santuário, à esquerda.' },
-    { id: 'flies', slot: 'site', name: 'Vagalumes no site', spot: [14, -26], hint: 'Só aparece de noite.', night: true }
+    { id: 'midnight', slot: 'cape', name: 'Capa Meia-noite', spot: [-26, -26], hint: 'Só aparece de noite.', night: true },
+    { id: 'lights', slot: 'decor', name: 'Varal de luzes', spot: [14, -26], hint: 'Ao norte, perto do santuário.' },
+    { id: 'kite', slot: 'decor', name: 'Pipa', spot: [-39, -3], hint: 'Onde venta mais, no extremo oeste.' },
+    { id: 'fire', slot: 'decor', name: 'Fogueirinha', spot: [44, -13], hint: 'Na faixa de areia do leste.' },
+    { id: 'shrooms', slot: 'decor', name: 'Cogumelos brilhantes', spot: [31, 29], hint: 'Só aparece de noite.', night: true },
+    { id: 'petals', slot: 'site', name: 'Pétalas no site', spot: [-17, -35], hint: 'Atrás do santuário, à esquerda.' },
+    { id: 'flies', slot: 'site', name: 'Vagalumes no site', spot: [20, -37], hint: 'Só aparece de noite.', night: true }
   ];
   const S = { own: [], eq: { head: '', face: '', back: '', neck: '', bottom: '', cape: '' }, decor: {}, site: {} };
   try { const r = JSON.parse(localStorage.getItem(SKEY) || 'null'); if (r && typeof r === 'object') { if (Array.isArray(r.own)) S.own = r.own.filter(i => ITEMS.some(x => x.id === i)); Object.assign(S.eq, r.eq || {}); S.decor = r.decor || {}; S.site = r.site || {}; } } catch (e) {}
@@ -923,7 +929,7 @@
     }
   }
   applyQ(); resize(); dayStep(0.001); camStep(1);
-  window.__ilha = { P, CAM, PS, S, ITEMS, collect, toggleWard, startEmote, setPhase: p => { phase = p; }, AU };
+  let vt = 100; window.__ilha = { shot: () => { camStep(1); renderer.render(scene, camera); }, PS, hero, THREE: T, groundH, tick: (n, dt) => { for (let i = 0; i < n; i++) { vt += dt; step(dt, vt); cosStep(dt, vt); } }, keys, P, CAM, PS, S, ITEMS, collect, toggleWard, startEmote, setPhase: p => { phase = p; }, AU };
   toParent({ nb: 'ready' });
   loop();
 })();
