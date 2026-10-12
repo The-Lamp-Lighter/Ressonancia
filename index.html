@@ -375,6 +375,17 @@ code{font:500 15px/1 var(--mono);letter-spacing:.2em}
 .rs-list li:first-child .pos{color:var(--accent)}
 .rs-list .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:550}
 .rs-list .sc{font:500 13px/1 var(--mono);color:var(--mute)}
+.fx-sub{margin:0;color:var(--mute);font-size:13px;line-height:1.45}.fx-sub b{color:var(--fg)}
+.fx-list{display:grid;gap:8px}
+.fx-it{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--chip)}
+.fx-it .fx-t{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.fx-it b{font:600 14px/1.2 var(--display)}.fx-it small{color:var(--mute);font-size:11px}
+.fx-it p{grid-column:1;margin:0;font-size:12.5px;line-height:1.4;color:var(--mute)}
+.fx-it.lock{opacity:.6}
+.fx-sw{grid-column:2;grid-row:1/3;width:42px;height:24px;border-radius:99px;border:1px solid var(--line);background:var(--bg);position:relative;cursor:pointer;padding:0}
+.fx-sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--mute);transition:translate .2s,background .2s}
+.fx-sw[aria-checked=true]{background:var(--accent);border-color:var(--accent)}.fx-sw[aria-checked=true]::after{translate:18px 0;background:var(--bg)}
+#fxToast{position:fixed;top:14px;left:50%;translate:-50% 0;z-index:31;max-width:min(430px,calc(100% - 24px));padding:10px 14px;border-radius:14px;border:1px solid var(--fg);font-size:13px;line-height:1.35;
+  background:var(--veil-b);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:tIn .35s cubic-bezier(.2,.8,.2,1)}#fxToast[hidden]{display:none}
 #toast{position:fixed;top:14px;left:50%;translate:-50% 0;z-index:30;width:min(430px,calc(100% - 24px));padding:10px 12px;border-radius:14px;border:1px solid var(--fg);
   background:var(--veil-b);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);animation:tIn .35s cubic-bezier(.2,.8,.2,1)}
 @keyframes tIn{from{opacity:0;translate:-50% -14px}}
@@ -431,6 +442,9 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
         </button>
         <button class="ib" id="bHome" aria-label="Voltar à tela de abertura" title="Tela de abertura">
           <svg viewBox="0 0 16 16"><path d="M2 7.5 8 2.5l6 5M3.5 6.5V13.5h9V6.5"/></svg>
+        </button>
+        <button class="ib" id="bFx" aria-label="Personalizar o site" title="Personalizar o site">
+          <svg viewBox="0 0 16 16"><path d="M8 1.6l1.5 3.9 3.9 1.5-3.9 1.5L8 12.4 6.5 8.5 2.6 7l3.9-1.5zM12.6 11.2l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/></svg>
         </button>
         <button class="ib" id="bTheme" aria-label="Alternar tema claro e escuro" title="Tema (T)">
           <svg id="icSun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1"/></svg>
@@ -584,6 +598,15 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
     <div id="skList" class="sk-grid"></div>
   </div>
 </div>
+<div id="fxModal" class="modal" role="dialog" aria-modal="true" aria-label="Personalizar o site" hidden>
+  <div class="m-card man">
+    <header class="m-head"><h2>Personalizar</h2>
+      <button class="ib" id="fxClose" type="button" aria-label="Fechar"><svg viewBox="0 0 16 16"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button>
+    </header>
+    <p class="fx-sub">Efeitos que enfeitam o site. Eles se ganham jogando: cada jogo libera alguns. <b id="fxCount"></b></p>
+    <div id="fxList" class="fx-list"></div>
+  </div>
+</div>
 <div id="manual" class="modal" role="dialog" aria-modal="true" aria-label="Manual do usuário" hidden>
   <div class="m-card man">
     <header class="m-head"><h2>Manual</h2>
@@ -615,6 +638,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li><b>Pausa:</b> aparece durante o jogo (tecla P).</li>
       <li><b>Lista:</b> fila de músicas (tecla Q).</li>
       <li><b>Salas:</b> jogo em grupo (veja abaixo).</li>
+      <li><b>Brilhos (✦):</b> Personalizar. Abre a lista de efeitos do site (pétalas, vagalumes, neve, confete…). Cada efeito é ganho jogando; os já coletados podem ser ligados e desligados ali.</li>
       <li><b>Casa:</b> volta à tela de abertura.</li>
       <li><b>Sol/lua:</b> tema claro ou escuro (tecla T).</li>
       <li><b>Tela cheia</b> (tecla F) e <b>olho</b>: esconde a interface (tecla H).</li>
@@ -635,6 +659,7 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li>A velocidade acompanha o BPM da música. Abaixo de 100 BPM o jogo trata como 100, para continuar jogável.</li>
       <li>Sem som tocando, o jogo corre numa velocidade padrão.</li>
       <li>O recorde fica guardado no seu navegador.</li>
+      <li>Desbloqueios para o site: <b>500 pontos</b> libera Neve, <b>1000</b> libera Bolhas e <b>2000</b> libera o Rastro de brilho.</li>
     </ul>
     <h3>Neon Breach</h3>
     <ul>
@@ -642,13 +667,14 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li><b>Mover:</b> WASD ou setas. <b>Furtivo:</b> Shift. <b>Hackear:</b> E. <b>Pausar:</b> Esc. Clique dentro do jogo para ele receber o teclado.</li>
       <li>Os efeitos sonoros ficam ligados. A música própria do jogo vem desligada, para não brigar com a sua. O botão <b>← Jogos</b> volta à lista.</li>
       <li>Notas e progresso ficam guardados só neste navegador.</li>
+      <li>Desbloqueios para o site: concluir uma missão libera Confete na batida; concluir sem alarme libera Ondas ao toque; duas missões diferentes liberam Chuva neon; rank S libera Brilho pulsante.</li>
     </ul>
     <h3>Ilha de Repouso</h3>
     <ul>
-      <li>Um mundo 3D calmo: uma ilha grande (dá uma boa caminhada) cercada de água, com dia e noite lentos. É <b>pesado</b> (pede placa de vídeo decente); o botão Qualidade no canto ajuda.</li>
-      <li><b>Andar:</b> WASD ou setas (joystick no celular). <b>Câmera:</b> arrastar. <b>Correr:</b> Shift. <b>Pular:</b> Espaço (segure para planar). <b>Sentar:</b> E. <b>Gestos:</b> Q e R. <b>Guarda-roupa:</b> C. <b>Acelerar o tempo:</b> N. <b>Sair:</b> Esc.</li>
-      <li>Você controla a <b>Lyra</b> (visual de desenho animado). Colete presentes brilhantes para ganhar cosméticos: roupas e acessórios, enfeites da ilha e efeitos para o site (pétalas, vagalumes).</li>
-      <li>No fim do caminho fica o <b>Santuário do Som</b>: cristais e luz que reagem à música. Sentar no banco vira a câmera para ele.</li>
+      <li>Um mundo 3D calmo: uma ilha grande (dá uma boa caminhada) cercada de água e outras ilhas com climas diferentes (neve, deserto e uma árvore rosa milenar), com dia e noite lentos. É <b>pesado</b> (pede placa de vídeo decente); o botão Qualidade no canto ajuda.</li>
+      <li><b>Andar:</b> WASD ou setas (joystick no celular). <b>Câmera:</b> arrastar. <b>Correr:</b> Shift. <b>Pular:</b> Espaço (segure para planar). <b>Sentar:</b> E. <b>Gestos:</b> Q e R. <b>Guarda-roupa:</b> C. <b>Hora do dia:</b> T (ou clique no relógio): dia, noite, sempre dia, sempre noite. <b>Acelerar o tempo:</b> N. <b>Barco:</b> E perto de um cais. <b>Sair:</b> Esc.</li>
+      <li>Você controla a <b>Lyra</b> (visual de desenho animado). Colete presentes brilhantes para ganhar cosméticos: roupas e acessórios, enfeites da ilha e efeitos para o site (pétalas, vagalumes, borboletas, aurora, estrelas), que se ligam no botão ✦ da tela principal.</li>
+      <li>No fim do caminho fica o <b>Santuário do Som</b>: cristais e luz que reagem à música. Sentar no banco vira a câmera para ele. Pela ponte e de barco você chega às outras ilhas; na ilha da árvore rosa há um banco para ficar olhando as pétalas caírem.</li>
       <li>Enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina.</li>
     </ul>
     <h3>Salas (jogo em grupo)</h3>
@@ -2360,6 +2386,7 @@ function gameStep(dt){
   if(hitTest(p)){
     Gm.state='over';Gm.diedAt=Gm.t;
     if(Gm.score>Gm.hi){Gm.hi=Gm.score;store.set('hi',Math.floor(Gm.hi))}
+    if(window.fxDino)window.fxDino(Math.floor(Gm.score));
     kick(900);syncGameUI();
   }
 }
@@ -2794,6 +2821,7 @@ function mpStep(dt,k,p){
       Gm.state='spec';Gm.diedAt=Gm.t;kick(900);
       const sc=Math.floor(Gm.dist/10);
       if(me){me.alive=false;me.score=sc}
+      if(window.fxDino)window.fxDino(sc);
       if(MP.host)hostDeath(MP.code,sc);else mpSendHost({t:'dead',s:sc});
     }
   }
@@ -3346,10 +3374,10 @@ const NBG={open:false,id:''};
       perf:'Pesado',
       req:['<b>Máquina:</b> é um mundo 3D de verdade (WebGL), com água, sombras, milhares de folhas de grama e luzes. Pede <b>placa de vídeo</b> decente ou um celular/computador recente. Em PC fraco ou celular antigo pode ficar travando.','<b>Qualidade:</b> o jogo começa se ajustando sozinho. O botão <b>Qualidade</b> no canto alterna entre baixa, média e alta. Se travar, deixe em baixa.','<b>Visualizador:</b> enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina. A análise do som continua, e é ela que move o reator.','<b>Celular:</b> funciona, com joystick na tela e arrastar para girar a câmera. A bateria pode esquentar.','<b>Internet:</b> não precisa. Tudo roda no navegador.','<b>Som:</b> o jogo não tem som próprio. Ele reage à música do Ressonância.','<b>Se aparecer erro de WebGL:</b> o navegador ou a placa não suporta 3D. Ative a aceleração de hardware nas configurações do navegador.'],
       help:[
-        {h:'A Lyra',p:'Você controla a Lyra, uma personagem com visual de desenho animado (cel shading, só nela) e movimentos suaves que reagem a andar, correr, pular, planar e sentar. O cabelo balança com o movimento.'},
-        {h:'Presentes e cosméticos',p:'Pela ilha há presentes brilhantes. Cada um traz um cosmético: acessórios e roupinhas para a Lyra, enfeites para a ilha (luzes, pipa, fogueira, cogumelos) e efeitos para o site (pétalas e vagalumes). Tudo fica guardado só neste navegador.'},
-        {h:'O lugar',p:'Uma ilha grande cercada de água, com colinas, árvores macias, lanternas de papel, pedras de caminho, um banco e um cais com barquinho. É um lugar para descansar, sem pontos nem objetivos. Inspirado na calma desse tipo de refúgio, com arte própria.'},
-        {h:'Controles',ul:['<b>Andar:</b> WASD ou setas. No celular, o joystick à esquerda.','<b>Câmera:</b> arraste com o mouse ou o dedo. A roda do mouse aproxima e afasta.','<b>Correr:</b> segure Shift. <b>Pular:</b> Espaço; segure Espaço no ar para planar. <b>Sentar:</b> E (perto do banco, ou onde estiver). <b>Gestos:</b> Q acena, R gira.','<b>Guarda-roupa:</b> tecla C (ou o botão no canto).','<b>Passar o tempo:</b> segure N para acelerar o dia e a noite.','<b>Sair:</b> Esc ou o botão ← Jogos.','Clique dentro do jogo para ele receber o teclado.']},
+        {h:'A Lyra',p:'Você controla a Lyra, uma personagem com visual de desenho animado (cel shading, só nela) e movimentos suaves e relaxados ao andar, correr, pular, planar e sentar. O cabelo balança com o movimento.'},
+        {h:'Presentes e cosméticos',p:'Pela ilha há presentes brilhantes. Cada um traz um cosmético: acessórios e roupinhas para a Lyra, enfeites para a ilha (luzes, pipa, fogueira, cogumelos) e efeitos para o site (pétalas, vagalumes, borboletas, aurora e estrelas). Os efeitos do site ligam e desligam no botão ✦ Personalizar da tela principal, onde também aparecem os que vêm do Dinossauro e do Neon Breach. Tudo fica guardado só neste navegador.'},
+        {h:'O lugar',p:'Uma ilha grande cercada de água, com colinas, árvores macias, lanternas de papel, pedras de caminho, um banco e um cais com barquinho. Uma ponte e barcos levam a outras ilhas pequenas: uma nevada com aurora, um deserto com cactos e uma com uma árvore rosa gigante e milenar, com pétalas caindo e um banco para observar. É um lugar para descansar, sem pontos nem objetivos. Inspirado na calma desse tipo de refúgio, com arte própria.'},
+        {h:'Controles',ul:['<b>Andar:</b> WASD ou setas. No celular, o joystick à esquerda.','<b>Câmera:</b> arraste com o mouse ou o dedo. A roda do mouse aproxima e afasta.','<b>Correr:</b> segure Shift. <b>Pular:</b> Espaço; segure Espaço no ar para planar. <b>Sentar:</b> E (perto do banco, ou onde estiver). <b>Gestos:</b> Q acena, R gira.','<b>Guarda-roupa:</b> tecla C (ou o botão no canto).','<b>Hora do dia:</b> tecla T ou clique no relógio: Dia, Noite, Sempre dia, Sempre noite.','<b>Barco:</b> E perto de um cais abre a lista de ilhas.','<b>Passar o tempo:</b> segure N para acelerar o dia e a noite.','<b>Sair:</b> Esc ou o botão ← Jogos.','Clique dentro do jogo para ele receber o teclado.']},
         {h:'O Santuário do Som',ul:['Na ponta do caminho há uma plataforma com cristais: é o reator da música.','Os cristais sobem e descem com as faixas de frequência, a esfera pulsa na batida e a cor da luz muda com a intensidade.','<b>Sentar no banco</b> faz a câmera se virar devagar para o santuário, para você curtir a música sem perder a imersão.','Sem música tocando, o santuário fica adormecido, só respirando.']},
         {h:'Dia e noite',ul:['O ciclo completo leva uns 15 minutos.','À noite aparecem vagalumes, estrelas, a lua e as lanternas acendem. De dia, borboletas.','Perto da água a personagem deixa ondinhas.']}]}
   ];
@@ -3454,31 +3482,157 @@ const NBG={open:false,id:''};
   $('#gmClose').addEventListener('click',closeGames);
   /* mensagens vindas do jogo (só aceitas do nosso quadro) */
 
-/* efeitos do site ligados pela Ilha de Repouso (pétalas e vagalumes) */
+/* personalizações do site: catálogo, desbloqueios (3 jogos), popup e efeitos */
 (()=>{
-  const F={petals:false,flies:false};
-  try{const r=JSON.parse(localStorage.getItem('ilha.v2')||'{}'),o=r.site||{},w=r.own||[];F.petals=!!o.petals&&w.includes('petals');F.flies=!!o.flies&&w.includes('flies')}catch(_){}
-  const cv=document.createElement('canvas');cv.id='fxc';cv.setAttribute('aria-hidden','true');cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none';
-  document.body.appendChild(cv);const cx=cv.getContext('2d');let W=0,H=0,P=[],Q=[],raf=0,last=0;
+  const KEY='rz.fx.v1';
+  const CAT=[
+    {id:'petals',n:'Pétalas',g:'Ilha de Repouso',d:'Pétalas rosa caindo devagar.',h:'Encontre o presente das pétalas na Ilha de Repouso.'},
+    {id:'flies',n:'Vagalumes',g:'Ilha de Repouso',d:'Luzinhas que piscam e vagueiam.',h:'Encontre o presente dos vagalumes na Ilha de Repouso.'},
+    {id:'butterflies',n:'Borboletas',g:'Ilha de Repouso',d:'Borboletas batendo asas pela tela.',h:'Um presente escondido na Ilha de Repouso (lado leste).'},
+    {id:'aurora',n:'Aurora',g:'Ilha de Repouso',d:'Faixas de luz ondulando no alto.',h:'Um presente escondido nas ilhas geladas da Ilha de Repouso.'},
+    {id:'stars',n:'Estrelas',g:'Ilha de Repouso',d:'Estrelas cintilando no fundo.',h:'Um presente escondido na Ilha de Repouso (lado oeste).'},
+    {id:'snow',n:'Neve',g:'Dinossauro',d:'Flocos leves caindo.',h:'Faça 500 pontos no Dinossauro.'},
+    {id:'bubbles',n:'Bolhas',g:'Dinossauro',d:'Bolhas subindo devagar.',h:'Faça 1000 pontos no Dinossauro.'},
+    {id:'trail',n:'Rastro de brilho',g:'Dinossauro',d:'O cursor deixa faíscas por onde passa.',h:'Faça 2000 pontos no Dinossauro.'},
+    {id:'confetti',n:'Confete na batida',g:'Neon Breach',d:'Confete que estoura no ritmo da música.',h:'Conclua uma missão no Neon Breach.'},
+    {id:'ripples',n:'Ondas ao toque',g:'Neon Breach',d:'Círculos que se abrem onde você clica.',h:'Conclua uma missão sem disparar o alarme.'},
+    {id:'rain',n:'Chuva neon',g:'Neon Breach',d:'Traços de chuva em diagonal.',h:'Conclua duas missões diferentes no Neon Breach.'},
+    {id:'glow',n:'Brilho pulsante',g:'Neon Breach',d:'As bordas pulsam com a batida.',h:'Consiga rank S no Neon Breach.'}
+  ];
+  const IDS=CAT.map(c=>c.id);
+  let S={own:[],on:{},seen:true};
+  try{const r=JSON.parse(localStorage.getItem(KEY)||'null');if(r&&Array.isArray(r.own))S={own:r.own.filter(i=>IDS.includes(i)),on:r.on||{},seen:r.seen!==false}}catch(_){}
+  /* migra o que já foi coletado na Ilha antes desta versão */
+  try{const r=JSON.parse(localStorage.getItem('ilha.v2')||'{}'),w=r.own||[],o=r.site||{};
+    for(const id of IDS)if(w.includes(id)&&!S.own.includes(id)){S.own.push(id);S.on[id]=o[id]!==false}}catch(_){}
+  const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(_){}};
+  const F={};const sync=()=>{for(const id of IDS)F[id]=S.own.includes(id)&&!!S.on[id]};sync();
+
+  /* ---- popup ---- */
+  const md=$('#fxModal'),list=$('#fxList'),cnt=$('#fxCount'),btn=$('#bFx');
+  function render(){
+    cnt.textContent=S.own.length+' de '+CAT.length+' coletadas';
+    list.replaceChildren();
+    for(const c of CAT){
+      const got=S.own.includes(c.id),el=document.createElement('div');
+      el.className='fx-it'+(got?'':' lock');
+      const t=document.createElement('div');t.className='fx-t';
+      const b=document.createElement('b');b.textContent=c.n;
+      const s=document.createElement('small');s.textContent=c.g;
+      t.append(b,s);
+      const p=document.createElement('p');p.textContent=got?c.d:'🔒 '+c.h;
+      el.append(t,p);
+      if(got){const sw=document.createElement('button');sw.type='button';sw.className='fx-sw';sw.setAttribute('role','switch');
+        sw.setAttribute('aria-checked',F[c.id]?'true':'false');sw.setAttribute('aria-label',c.n);
+        sw.addEventListener('click',()=>{S.on[c.id]=!S.on[c.id];sync();save();sw.setAttribute('aria-checked',F[c.id]?'true':'false');kick()});
+        el.append(sw)}
+      list.append(el)}
+  }
+  function openFx(){if(body.classList.contains('intro'))return;rm.hidden=true;mn.hidden=true;render();md.hidden=false;md.querySelector('.m-card').scrollTop=0;S.seen=true;save();btn.classList.remove('has');wake()}
+  function closeFx(){md.hidden=true}
+  btn.addEventListener('click',()=>md.hidden?openFx():closeFx());
+  $('#fxClose').addEventListener('click',closeFx);
+  md.addEventListener('click',e=>{if(e.target===md)closeFx()});
+  addEventListener('keydown',e=>{if(e.key==='Escape'&&!md.hidden){closeFx();e.stopPropagation()}},true);
+  if(!S.seen)btn.classList.add('has');
+
+  /* ---- desbloqueio + aviso ---- */
+  const tz=document.createElement('div');tz.id='fxToast';tz.hidden=true;document.body.appendChild(tz);let tt=0;
+  function say(names){tz.textContent='✦ Nova personalização: '+names.join(', ')+' — veja em Personalizar';tz.hidden=false;clearTimeout(tt);tt=setTimeout(()=>{tz.hidden=true},5200)}
+  function unlock(ids){const add=[];
+    for(const id of ids||[]){if(IDS.includes(id)&&!S.own.includes(id)){S.own.push(id);S.on[id]=true;add.push(CAT.find(c=>c.id===id).n)}}
+    if(!add.length)return;S.seen=false;save();sync();btn.classList.add('has');if(!md.hidden)render();say(add);kick()}
+  window.fxUnlock=unlock;
+  window.fxDino=sc=>{const a=[];if(sc>=500)a.push('snow');if(sc>=1000)a.push('bubbles');if(sc>=2000)a.push('trail');if(a.length)unlock(a)};
+
+  /* ---- efeitos ---- */
+  const cv=document.createElement('canvas');cv.id='fxc';cv.setAttribute('aria-hidden','true');
+  cv.style.cssText='position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2;display:none';
+  document.body.appendChild(cv);const cx=cv.getContext('2d');
+  let W=0,H=0,raf=0,last=0,lastBeat=0,acc='#fff',accT=0;const R=Math.random;
   const rs=()=>{W=cv.width=innerWidth;H=cv.height=innerHeight};addEventListener('resize',rs);rs();
-  const mk=()=>{while(P.length<(F.petals?26:0))P.push({x:Math.random()*W,y:Math.random()*H,s:3+Math.random()*4,v:18+Math.random()*26,w:Math.random()*6,r:Math.random()*6});
-    P.length=Math.min(P.length,F.petals?26:0);
-    while(Q.length<(F.flies?18:0))Q.push({x:Math.random()*W,y:Math.random()*H,a:Math.random()*6,t:Math.random()*6});Q.length=Math.min(Q.length,F.flies?18:0)};
+  const pools={petals:[],flies:[],butterflies:[],stars:[],snow:[],bubbles:[],rain:[],confetti:[],spark:[],ring:[]};
+  const fill=(a,n,mkf)=>{while(a.length<n)a.push(mkf());a.length=Math.min(a.length,n)};
+  const anyOn=()=>IDS.some(i=>F[i]);
+  function kick(){sync();const on=anyOn();cv.style.display=on?'block':'none';
+    if(on&&!raf){last=performance.now();raf=requestAnimationFrame(tick)}else if(!on&&raf){cancelAnimationFrame(raf);raf=0;cx.clearRect(0,0,W,H)}}
+  addEventListener('pointermove',e=>{if(!F.trail)return;const a=pools.spark;for(let i=0;i<2;i++)a.push({x:e.clientX,y:e.clientY,vx:(R()-.5)*40,vy:(R()-.5)*40+10,l:.7+R()*.5,m:1.1,h:R()*360});if(a.length>140)a.splice(0,a.length-140)},{passive:true});
+  addEventListener('pointerdown',e=>{if(F.ripples)pools.ring.push({x:e.clientX,y:e.clientY,t:0})},{passive:true});
   function tick(ts){raf=requestAnimationFrame(tick);const dt=Math.min(.05,(ts-last)/1000||.016);last=ts;
-    if(typeof NBG!=='undefined'&&NBG.open){cx.clearRect(0,0,W,H);return}
-    cx.clearRect(0,0,W,H);const dk=isDark();
-    for(const p of P){p.y+=p.v*dt;p.w+=dt;p.x+=Math.sin(p.w)*14*dt+8*dt;p.r+=dt*1.5;if(p.y>H+10){p.y=-10;p.x=Math.random()*W}if(p.x>W+10)p.x=-10;
-      cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.scale(1,.6+.4*Math.sin(p.w*2));cx.fillStyle=dk?'rgba(255,190,215,.55)':'rgba(240,140,175,.6)';cx.beginPath();cx.ellipse(0,0,p.s,p.s*.6,0,0,6.3);cx.fill();cx.restore()}
-    for(const q of Q){q.t+=dt;q.a+=(Math.random()-.5)*dt*3;q.x+=Math.cos(q.a)*14*dt;q.y+=Math.sin(q.a)*14*dt;if(q.x<0)q.x=W;if(q.x>W)q.x=0;if(q.y<0)q.y=H;if(q.y>H)q.y=0;
-      const g=.5+.5*Math.sin(q.t*2);cx.fillStyle=(dk?'rgba(255,240,150,':'rgba(230,190,60,')+(.2+.6*g).toFixed(2)+')';cx.shadowColor=dk?'#ffe98a':'#e6b83c';cx.shadowBlur=dk?12:6;cx.beginPath();cx.arc(q.x,q.y,2,0,6.3);cx.fill();cx.shadowBlur=0}}
-  window.siteFx=f=>{if(f){F.petals=!!f.petals;F.flies=!!f.flies}mk();const on=F.petals||F.flies;cv.style.display=on?'block':'none';if(on&&!raf){last=performance.now();raf=requestAnimationFrame(tick)}else if(!on&&raf){cancelAnimationFrame(raf);raf=0;cx.clearRect(0,0,W,H)}};
-  window.siteFx();
+    cx.clearRect(0,0,W,H);
+    if(typeof NBG!=='undefined'&&NBG.open)return;
+    const dk=isDark(),pl=Math.min(1,Math.max(0,A.pulse||0));
+    if(ts-accT>1000){accT=ts;acc=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||(dk?'#fff':'#000')}
+    /* aurora */
+    if(F.aurora){const t=ts/1000;cx.save();cx.globalCompositeOperation=dk?'lighter':'source-over';
+      for(let b=0;b<3;b++){const hue=[150,190,285][b];
+        for(let x=0;x<W;x+=18){const y0=H*.08+Math.sin(x*.004+t*.35+b*2)*H*.05+b*H*.035,hh=H*(.16+.05*Math.sin(x*.006-t*.4+b));
+          const g=cx.createLinearGradient(0,y0,0,y0+hh);const a=(dk?.2:.08)*(.6+.4*Math.sin(x*.01+t*.5+b));
+          g.addColorStop(0,`hsla(${hue},85%,${dk?60:55}%,0)`);g.addColorStop(.35,`hsla(${hue},85%,${dk?60:55}%,${a})`);g.addColorStop(1,`hsla(${hue},85%,60%,0)`);
+          cx.fillStyle=g;cx.fillRect(x,y0,19,hh)}}cx.restore()}
+    /* estrelas */
+    if(F.stars){fill(pools.stars,48,()=>({x:R()*W,y:R()*H,s:.6+R()*1.6,t:R()*6,v:.8+R()*1.6}));
+      for(const s of pools.stars){s.t+=dt*s.v;const a=.25+.55*(.5+.5*Math.sin(s.t));cx.fillStyle=(dk?'rgba(255,255,255,':'rgba(210,160,30,')+a.toFixed(2)+')';
+        cx.beginPath();cx.arc(s.x,s.y,s.s,0,6.3);cx.fill();if(s.s>1.7){cx.fillRect(s.x-s.s*2.4,s.y-.4,s.s*4.8,.8);cx.fillRect(s.x-.4,s.y-s.s*2.4,.8,s.s*4.8)}}}
+    else pools.stars.length=0;
+    /* pétalas */
+    if(F.petals){fill(pools.petals,26,()=>({x:R()*W,y:R()*H,s:3+R()*4,v:18+R()*26,w:R()*6,r:R()*6}));
+      for(const p of pools.petals){p.y+=p.v*dt;p.w+=dt;p.x+=Math.sin(p.w)*14*dt+8*dt;p.r+=dt*1.5;if(p.y>H+10){p.y=-10;p.x=R()*W}if(p.x>W+10)p.x=-10;
+        cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.scale(1,.6+.4*Math.sin(p.w*2));cx.fillStyle=dk?'rgba(255,190,215,.55)':'rgba(240,140,175,.6)';cx.beginPath();cx.ellipse(0,0,p.s,p.s*.6,0,0,6.3);cx.fill();cx.restore()}}
+    else pools.petals.length=0;
+    /* neve */
+    if(F.snow){fill(pools.snow,70,()=>({x:R()*W,y:R()*H,s:1+R()*2.4,v:22+R()*34,w:R()*6}));
+      cx.fillStyle=dk?'rgba(255,255,255,.7)':'rgba(120,150,190,.7)';
+      for(const p of pools.snow){p.y+=p.v*dt;p.w+=dt*1.2;p.x+=Math.sin(p.w)*12*dt;if(p.y>H+6){p.y=-6;p.x=R()*W}cx.beginPath();cx.arc(p.x,p.y,p.s,0,6.3);cx.fill()}}
+    else pools.snow.length=0;
+    /* chuva */
+    if(F.rain){fill(pools.rain,90,()=>({x:R()*W,y:R()*H,l:10+R()*16,v:520+R()*380}));
+      cx.strokeStyle=dk?'rgba(150,220,255,.4)':'rgba(40,110,170,.4)';cx.lineWidth=1.1;cx.beginPath();
+      for(const p of pools.rain){p.y+=p.v*dt;p.x-=p.v*dt*.18;if(p.y>H+20||p.x<-20){p.y=-20;p.x=R()*(W+120)}cx.moveTo(p.x,p.y);cx.lineTo(p.x+p.l*.18,p.y-p.l)}cx.stroke()}
+    else pools.rain.length=0;
+    /* bolhas */
+    if(F.bubbles){fill(pools.bubbles,16,()=>({x:R()*W,y:R()*H,s:5+R()*14,v:14+R()*26,w:R()*6}));
+      cx.lineWidth=1.2;cx.strokeStyle=dk?'rgba(190,230,255,.45)':'rgba(70,130,190,.5)';
+      for(const p of pools.bubbles){p.y-=p.v*dt;p.w+=dt;p.x+=Math.sin(p.w)*10*dt;if(p.y<-30){p.y=H+30;p.x=R()*W}cx.beginPath();cx.arc(p.x,p.y,p.s,0,6.3);cx.stroke();cx.beginPath();cx.arc(p.x-p.s*.35,p.y-p.s*.35,p.s*.18,0,6.3);cx.stroke()}}
+    else pools.bubbles.length=0;
+    /* vagalumes */
+    if(F.flies){fill(pools.flies,18,()=>({x:R()*W,y:R()*H,a:R()*6,t:R()*6}));
+      for(const q of pools.flies){q.t+=dt;q.a+=(R()-.5)*dt*3;q.x+=Math.cos(q.a)*14*dt;q.y+=Math.sin(q.a)*14*dt;if(q.x<0)q.x=W;if(q.x>W)q.x=0;if(q.y<0)q.y=H;if(q.y>H)q.y=0;
+        const g=.5+.5*Math.sin(q.t*2);cx.fillStyle=(dk?'rgba(255,240,150,':'rgba(230,190,60,')+(.2+.6*g).toFixed(2)+')';cx.shadowColor=dk?'#ffe98a':'#e6b83c';cx.shadowBlur=dk?12:6;cx.beginPath();cx.arc(q.x,q.y,2,0,6.3);cx.fill();cx.shadowBlur=0}}
+    else pools.flies.length=0;
+    /* borboletas */
+    if(F.butterflies){fill(pools.butterflies,7,()=>({x:R()*W,y:R()*H,a:R()*6,t:R()*6,h:[20,200,290,45][(R()*4)|0]}));
+      for(const q of pools.butterflies){q.t+=dt*9;q.a+=(R()-.5)*dt*4;const v=26+8*Math.sin(q.t*.2);q.x+=Math.cos(q.a)*v*dt;q.y+=Math.sin(q.a)*v*dt-6*dt;
+        if(q.x<-20)q.x=W+20;if(q.x>W+20)q.x=-20;if(q.y<-20)q.y=H+20;if(q.y>H+20)q.y=-20;
+        const f=Math.abs(Math.sin(q.t));cx.save();cx.translate(q.x,q.y);cx.rotate(q.a+1.57);cx.fillStyle=`hsla(${q.h},${dk?80:65}%,${dk?70:58}%,.75)`;
+        for(const sg of[-1,1]){cx.save();cx.scale(sg*(.25+.75*f),1);cx.beginPath();cx.ellipse(5,-3,5,7,.4,0,6.3);cx.fill();cx.beginPath();cx.ellipse(4,5,3.4,4.6,-.3,0,6.3);cx.fill();cx.restore()}
+        cx.fillStyle=dk?'rgba(255,255,255,.7)':'rgba(40,40,40,.6)';cx.fillRect(-.6,-6,1.2,12);cx.restore()}}
+    else pools.butterflies.length=0;
+    /* confete na batida */
+    if(F.confetti){const bn=A.beatN|0;if(bn!==lastBeat){lastBeat=bn;const a=pools.confetti;for(let i=0;i<10;i++)a.push({x:R()*W,y:-10,vx:(R()-.5)*90,vy:60+R()*120,r:R()*6,w:(R()-.5)*9,h:R()*360,s:4+R()*4});if(a.length>160)a.splice(0,a.length-160)}
+      const a=pools.confetti;for(let i=a.length-1;i>=0;i--){const p=a[i];p.vy+=60*dt;p.vx*=.995;p.x+=p.vx*dt;p.y+=p.vy*dt*.6;p.r+=p.w*dt;if(p.y>H+12){a.splice(i,1);continue}
+        cx.save();cx.translate(p.x,p.y);cx.rotate(p.r);cx.scale(1,Math.abs(Math.sin(p.r*1.3))+.2);cx.fillStyle=`hsla(${p.h},85%,${dk?66:52}%,.85)`;cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);cx.restore()}}
+    else pools.confetti.length=0;
+    /* faíscas do cursor */
+    if(F.trail){const a=pools.spark;for(let i=a.length-1;i>=0;i--){const p=a[i];p.l-=dt;if(p.l<=0){a.splice(i,1);continue}p.x+=p.vx*dt;p.y+=p.vy*dt;
+      const k=p.l/p.m;cx.fillStyle=`hsla(${p.h},90%,${dk?72:52}%,${k.toFixed(2)})`;cx.beginPath();cx.arc(p.x,p.y,1+3*k,0,6.3);cx.fill()}}
+    else pools.spark.length=0;
+    /* ondas ao toque (também respiram na batida forte) */
+    if(F.ripples){const a=pools.ring;cx.lineWidth=1.6;for(let i=a.length-1;i>=0;i--){const p=a[i];p.t+=dt;if(p.t>1.4){a.splice(i,1);continue}
+      cx.strokeStyle=dk?`rgba(255,255,255,${(.5*(1-p.t/1.4)).toFixed(2)})`:`rgba(0,0,0,${(.4*(1-p.t/1.4)).toFixed(2)})`;cx.beginPath();cx.arc(p.x,p.y,8+p.t*150,0,6.3);cx.stroke()}}
+    else pools.ring.length=0;
+    /* brilho pulsante nas bordas */
+    if(F.glow){const m=Math.max(W,H),g=cx.createRadialGradient(W/2,H/2,m*.35,W/2,H/2,m*.75);
+      cx.save();g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,acc);cx.globalAlpha=.08+.3*pl;cx.fillStyle=g;cx.fillRect(0,0,W,H);cx.restore()}
+  }
+  window.siteFx=()=>kick();
+  kick();
 })();
   addEventListener('message',e=>{
     const f=$('#nbFrame'),d=e.data;
     if(!d||typeof d!=='object'||!f||e.source!==f.contentWindow)return;
     if(d.nb==='ready')nbTheme();
-    else if(d.nb==='site'){window.siteFx(d.fx||{})}
+    else if(d.nb==='unlock'){if(window.fxUnlock&&Array.isArray(d.ids))window.fxUnlock(d.ids.slice(0,20).filter(x=>typeof x==='string'))}
     else if(d.nb==='exit'){nbClose();openGames()}
   });
   addEventListener('resize',()=>{if(NBG.open||!gm.hidden)layout()});

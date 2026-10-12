@@ -115,6 +115,11 @@
     if (outcome !== 'fail') {
       const best = SC.store.get('best', {}), old = best[mm.id], order = 'FBAS';
       if (!old || order.indexOf(rank) > order.indexOf(old.rank) || (rank === old.rank && mm.time < old.time)) { best[mm.id] = { rank, time: mm.time }; SC.store.set('best', best); }
+      const u = ['confetti'], bb = SC.store.get('best', {});
+      if (outcome === 'silent') u.push('ripples');
+      if (Object.keys(bb).length >= 2) u.push('rain');
+      if (rank === 'S') u.push('glow');
+      if (SC.unlock) SC.unlock(u);
     }
     SC.lastResult = res; SC.audio.tension(0);
     clearTimeout(endT); endT = setTimeout(() => SC.go('result', res), 600);

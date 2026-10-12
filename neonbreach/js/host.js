@@ -29,6 +29,7 @@
     r.dataset.theme = d.dark ? 'dark' : 'light';
     Object.assign(SC.pal, PAL[d.dark ? 'dark' : 'light'], { dark: !!d.dark });
   });
+  SC.unlock = ids => { if (SC.embedded) window.parent.postMessage({ nb: 'unlock', ids: ids }, '*'); };
   SC.exit = () => { if (SC.embedded) window.parent.postMessage({ nb: 'exit' }, '*'); };
   if (SC.embedded) window.parent.postMessage({ nb: 'ready' }, '*');
 })(window.SC);

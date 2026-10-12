@@ -14,6 +14,16 @@ canvas#c{position:fixed;inset:0;width:100%;height:100%;display:block;outline:non
 .chip{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1px solid var(--line);border-radius:12px;background:var(--glass);color:var(--fg);font:500 11.5px/1 'DM Mono',monospace;letter-spacing:.06em;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
 button.chip{cursor:pointer}button.chip:hover{border-color:var(--fg)}
 #hTL{top:12px;left:12px}#hTR{top:12px;right:12px}
+#prompt{position:fixed;left:50%;bottom:62px;transform:translateX(-50%);z-index:3;display:none;pointer-events:none}
+#bpanel{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;display:none;flex-direction:column;gap:8px;padding:16px;border:1px solid var(--line);border-radius:16px;background:rgba(14,16,28,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);width:min(360px,calc(100vw - 24px))}
+#bpanel .wh{display:flex;justify-content:space-between;align-items:center}#bpanel .wh b{font:600 13px/1 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase}
+#bList{display:grid;gap:6px}#bpanel .wi{cursor:pointer}
+#fade{position:fixed;inset:0;z-index:8;background:#0a0d18;opacity:0;pointer-events:none;transition:opacity .9s;display:grid;place-items:center;font:500 12px 'DM Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}#fade.on{opacity:1;pointer-events:auto}
+#clock{cursor:pointer}#clock:hover{border-color:var(--fg)}
+#tpanel{position:fixed;right:12px;top:58px;z-index:6;display:none;gap:8px;padding:14px;border:1px solid var(--line);border-radius:16px;background:rgba(14,16,28,.7);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);width:min(270px,calc(100vw - 24px))}
+#tpanel .wh{display:flex;justify-content:space-between;align-items:center}#tpanel .wh b{font:600 13px/1 'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase}
+#tpanel .g2{display:grid;grid-template-columns:1fr 1fr;gap:6px}#tpanel button.chip{justify-content:center;cursor:pointer}#tpanel button.on{border-color:#ffd98a;background:rgba(255,217,138,.12)}
+#tpanel small{font:500 11px/1.4 'DM Mono',monospace;color:var(--mute)}
 #clock i{display:inline-block;width:10px;height:10px;border-radius:50%;background:#ffd98a;box-shadow:0 0 8px #ffd98a}
 #hint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:3;text-align:center;max-width:92vw;transition:opacity 1.2s}
 #hint.off{opacity:0;pointer-events:none}
@@ -41,10 +51,14 @@ body.touch #ward{top:58px;bottom:auto;max-height:62vh}
 <body>
 <canvas id="c" tabindex="0"></canvas>
 <div class="hud" id="hTL"><button class="chip" id="bBack" type="button">← Jogos</button></div>
-<div class="hud" id="hTR"><button class="chip" id="bWard" type="button" title="Guarda-roupa (C)">✦ Guarda-roupa <b id="wCount">0/17</b></button><span class="chip" id="clock"><i></i><span id="clockT">Entardecer</span></span><button class="chip" id="bQ" type="button" title="Qualidade gráfica">Qualidade: auto</button></div>
-<div id="hint" class="chip"><span class="kb">WASD mover · arraste para girar a câmera · roda do mouse: zoom · Shift correr · Espaço pular (segure no ar para planar) · E sentar · Q acenar · R girar · C guarda-roupa · N acelera o tempo</span><span class="tc" style="display:none">Use o botão da esquerda para andar e arraste para girar a câmera</span></div>
+<div class="hud" id="hTR"><button class="chip" id="bWard" type="button" title="Guarda-roupa (C)">✦ Guarda-roupa <b id="wCount">0/0</b></button><span class="chip" id="clock" title="Hora do dia (T)" role="button" tabindex="0"><i></i><span id="clockT">Entardecer</span></span><button class="chip" id="bQ" type="button" title="Qualidade gráfica">Qualidade: auto</button></div>
+<div id="hint" class="chip"><span class="kb">WASD mover · arraste para girar a câmera · roda do mouse: zoom · Shift correr · Espaço pular (segure no ar para planar) · E sentar · Q acenar · R girar · C guarda-roupa · T hora do dia · N acelera o tempo</span><span class="tc" style="display:none">Use o botão da esquerda para andar e arraste para girar a câmera</span></div>
+<div id="tpanel"><div class="wh"><b>Hora do dia</b><button class="chip" id="tClose" type="button" aria-label="Fechar">✕</button></div><div class="g2"><button class="chip" data-m="day" type="button">Dia</button><button class="chip" data-m="night" type="button">Noite</button><button class="chip" data-m="lockDay" type="button">Sempre dia</button><button class="chip" data-m="lockNight" type="button">Sempre noite</button></div><small id="tMode"></small></div>
+<div id="prompt" class="chip"></div>
+<div id="bpanel"><div class="wh"><b>Viajar de barco</b><button class="chip" id="bClose" type="button" aria-label="Fechar">✕</button></div><div id="bList"></div></div>
+<div id="fade">Navegando…</div>
 <div id="toast"><b></b><span></span></div>
-<div id="ward"><div class="wh"><b>Guarda-roupa</b><button class="chip" id="wClose" type="button" aria-label="Fechar">✕</button></div><p class="wp">Ache os presentes brilhantes pela ilha. Itens de <i>Ilha</i> e <i>Site</i> ficam ligados enquanto você quiser.</p><div id="wList"></div><button class="chip" id="wOff" type="button">Tirar tudo que estou vestindo</button></div>
+<div id="ward"><div class="wh"><b>Guarda-roupa</b><button class="chip" id="wClose" type="button" aria-label="Fechar">✕</button></div><p class="wp">Ache os presentes brilhantes pela ilha. Roupas e enfeites da ilha ficam ligados enquanto você quiser. Os efeitos do site você liga em ✦ Personalizar, na tela principal do Ressonância.</p><div id="wList"></div><button class="chip" id="wOff" type="button">Tirar tudo que estou vestindo</button></div>
 <div id="joy"><i></i></div>
 <div id="act"><button class="chip rb" id="aJump" type="button">pular</button><button class="chip rb" id="aEmo" type="button">gesto</button><button class="chip rb" id="aSit" type="button">sentar</button></div>
 <div id="load">Acordando a ilha…</div>
