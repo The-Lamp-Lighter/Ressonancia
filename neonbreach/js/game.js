@@ -317,7 +317,32 @@
     }
     ctx.globalAlpha = 1;
   }
+  /* paredes, brilho das bordas e pontinhos não mudam durante a missão: são desenhados UMA vez numa imagem e só copiados a cada quadro */
+  function snapDraw(ctx, cv) {
+    const T = ctx.getTransform(); ctx.save(); ctx.setTransform(1, 0, 0, 1, Math.round(T.e), Math.round(T.f)); ctx.drawImage(cv, 0, 0); ctx.restore();
+  }
+  function layer(ctx, m, s, col, name, paint) {
+    const d = ctx.getTransform().a, key = [s.toFixed(3), d, col, SC.pal.wall, SC.pal.dots].join('|'), c = m['_L' + name];
+    if (c && c.key === key) return c.cv;
+    const w = Math.ceil(m.W * s * d), h = Math.ceil(m.H * s * d);
+    if (w * h > 18e6) return null;                              /* mapa enorme: desenha direto, como antes */
+    const cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+    const g = cv.getContext('2d'); g.scale(d, d); paint(g, d);
+    m['_L' + name] = { key, cv }; return cv;
+  }
   function drawMap(ctx, m, s, col, thin, r) {
+    if (!thin) {
+      const cv = layer(ctx, m, s, col, 'wall', (g, d) => drawMapRaw(g, m, s, col, false, null, d));
+      if (cv) { snapDraw(ctx, cv); return; }
+    }
+    drawMapRaw(ctx, m, s, col, thin, r, 1);
+  }
+  function drawDots(ctx, m, s, r) {
+    const cv = layer(ctx, m, s, SC.pal.dots, 'dots', g => { g.fillStyle = SC.pal.dots; for (let y = 0; y <= m.H; y++) for (let x = 0; x <= m.W; x++) g.fillRect(x * s - 1, y * s - 1, 2, 2); });
+    if (cv) { snapDraw(ctx, cv); return; }
+    ctx.fillStyle = SC.pal.dots; for (let y = r.y0; y <= r.y1 + 1; y++) for (let x = r.x0; x <= r.x1 + 1; x++) ctx.fillRect(x * s - 1, y * s - 1, 2, 2);
+  }
+  function drawMapRaw(ctx, m, s, col, thin, r, sh) {
     const x0 = r ? r.x0 : 0, y0 = r ? r.y0 : 0, x1 = r ? r.x1 : m.W - 1, y1 = r ? r.y1 : m.H - 1;
     ctx.shadowBlur = 0; ctx.fillStyle = SC.pal.wall;
     if (thin) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) if (m.grid[y][x] === '#') ctx.fillRect(x * s, y * s, s + 0.5, s + 0.5); }
@@ -330,7 +355,7 @@
       if (isW(x - 1, y)) { ctx.moveTo(x * s, y * s); ctx.lineTo(x * s, (y + 1) * s); }
       if (isW(x + 1, y)) { ctx.moveTo((x + 1) * s, y * s); ctx.lineTo((x + 1) * s, (y + 1) * s); }
     }
-    if (!thin) { ctx.shadowColor = col; ctx.shadowBlur = 8; }
+    if (!thin) { ctx.shadowColor = col; ctx.shadowBlur = 8 * (sh || 1); }
     ctx.stroke(); ctx.shadowBlur = 0;
   }
   function cone(ctx, m, o, range, fov, s, hot) {
@@ -377,8 +402,7 @@
     ctx.clearRect(0, 0, w, h);
     ctx.save(); ctx.translate(v.ox, v.oy);
     const r = { x0: Math.max(0, Math.floor(-v.ox / s) - 1), y0: Math.max(0, Math.floor(-v.oy / s) - 1), x1: Math.min(M.W - 1, Math.ceil((w - v.ox) / s) + 1), y1: Math.min(M.H - 1, Math.ceil((h - v.oy) / s) + 1) };
-    ctx.fillStyle = SC.pal.dots;                                  /* malha de piso */
-    for (let y = r.y0; y <= r.y1 + 1; y++) for (let x = r.x0; x <= r.x1 + 1; x++) ctx.fillRect(x * s - 1, y * s - 1, 2, 2);
+    drawDots(ctx, M, s, r);                                       /* malha de piso */
     const onScr = (o, rg) => { const X = o.x * s + v.ox, Y = o.y * s + v.oy, m = rg * s; return X > -m && X < w + m && Y > -m && Y < h + m; };
     M.cams.forEach(c => { if (onScr(c, M.CR)) cone(ctx, M, c, M.CR, C_FOV, s, c.sees); });
     M.guards.forEach(g => { if (onScr(g, M.GR)) cone(ctx, M, g, M.GR, G_FOV, s, g.sees || M.alarm); });

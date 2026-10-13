@@ -14,11 +14,11 @@
   /* ───────── renderizador ───────── */
   let renderer;
   try {
-    renderer = new T.WebGLRenderer({ canvas: $('c'), antialias: true, powerPreference: 'high-performance' });
+    renderer = new T.WebGLRenderer({ canvas: $('c'), antialias: (devicePixelRatio || 1) < 1.5, powerPreference: 'high-performance' });
   } catch (e) { $('msg').style.display = 'grid'; $('load').classList.add('off'); return; }
   renderer.outputEncoding = T.sRGBEncoding;
   renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
-  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = T.PCFSoftShadowMap; renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
   const QUAL = [{ n: 'baixa', pr: 0.75, sh: false }, { n: 'média', pr: 1, sh: true }, { n: 'alta', pr: Math.min(devicePixelRatio || 1, 1.75), sh: true }];
   let qi = Q.has('q') ? +Q.get('q') : 1, qAuto = !Q.has('q');
   let prNow = QUAL[qi].pr;
@@ -77,6 +77,18 @@
   function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
   const rnd = mulberry(20261010);
 
+  /* corta uma malha em grade (N x N células) em blocos K x K: cada bloco some sozinho quando está fora da tela */
+  function tileGrid(g, N, K, mat) {
+    const grp = new T.Group(), P0 = g.attributes.position, N0 = g.attributes.normal, C0 = g.attributes.color, W = N + 1, step = Math.ceil(N / K);
+    for (let r0 = 0; r0 < N; r0 += step) for (let c0 = 0; c0 < N; c0 += step) {
+      const r1 = Math.min(N, r0 + step), c1 = Math.min(N, c0 + step), nw = c1 - c0 + 1, nh = r1 - r0 + 1, pa = new Float32Array(nw * nh * 3), na = new Float32Array(nw * nh * 3), ca = new Float32Array(nw * nh * 3), idx = [];
+      for (let r = 0; r < nh; r++) for (let c = 0; c < nw; c++) { const s0 = (r0 + r) * W + c0 + c, d = (r * nw + c) * 3; pa[d] = P0.getX(s0); pa[d + 1] = P0.getY(s0); pa[d + 2] = P0.getZ(s0); na[d] = N0.getX(s0); na[d + 1] = N0.getY(s0); na[d + 2] = N0.getZ(s0); ca[d] = C0.getX(s0); ca[d + 1] = C0.getY(s0); ca[d + 2] = C0.getZ(s0); }
+      for (let r = 0; r < nh - 1; r++) for (let c = 0; c < nw - 1; c++) { const a = r * nw + c, b = a + 1, d = a + nw, e = d + 1; idx.push(a, d, b, b, d, e); }
+      const tg = new T.BufferGeometry(); tg.setAttribute('position', new T.BufferAttribute(pa, 3)); tg.setAttribute('normal', new T.BufferAttribute(na, 3)); tg.setAttribute('color', new T.BufferAttribute(ca, 3)); tg.setIndex(idx); tg.computeBoundingSphere();
+      const m = new T.Mesh(tg, mat); m.receiveShadow = true; grp.add(m);
+    }
+    return grp;
+  }
   const terr = (() => {
     const N = 340, S = 170, g = new T.PlaneGeometry(S, S, N, N); g.rotateX(-Math.PI / 2);
     const p = g.attributes.position, col = new Float32Array(p.count * 3), c = new T.Color();
@@ -92,7 +104,7 @@
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     g.setAttribute('color', new T.BufferAttribute(col, 3)); g.computeVertexNormals();
-    const m = new T.Mesh(g, new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 })); m.receiveShadow = true; scene.add(m); return m;
+    const m = tileGrid(g, N, 6, new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 })); scene.add(m); return m;
   })();
 
   /* ───────── luzes ───────── */
@@ -101,6 +113,9 @@
   Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 220 }); sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.04;
   scene.add(sun, sun.target);
   const reactorLight = new T.PointLight(0xff9ad0, 0, 26, 1.6); reactorLight.position.set(PLAT.x, 3.2, PLAT.z); scene.add(reactorLight);
+  /* luzes pontuais custam em CADA pixel mesmo apagadas: as da cena viram 'fontes virtuais' e só 2 luzes reais são movidas para as mais fortes perto de você */
+  const VL = [reactorLight]; const vlight = l => { l.visible = false; VL.push(l); return l; }; vlight(reactorLight); VL.length = 1;
+  const LP = [0, 1].map(() => { const l = new T.PointLight(0xffffff, 0, 10, 1.6); scene.add(l); return { l, cur: null, f: 0 }; });
   const candle = new T.PointLight(0xffc27a, 0, 11, 1.8); scene.add(candle);
 
   /* ───────── céu ───────── */
@@ -291,7 +306,7 @@
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     }
     g.setAttribute('color', new T.BufferAttribute(col, 3)); g.computeVertexNormals();
-    const m = new T.Mesh(g, new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 })); m.position.set(I.x, 0, I.z); m.receiveShadow = true; scene.add(m); return m;
+    const m = tileGrid(g, N, 3, new T.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 })); m.position.set(I.x, 0, I.z); scene.add(m); return m;
   };
   ISLES.forEach(isleTerrain);
 
@@ -374,6 +389,7 @@
     for (let i = 0; i < 7; i++) {
       const a = i / 7 * TAU + 0.3, L = 7 + (i % 3) * 2.2, curve = new T.CatmullRomCurve3([new T.Vector3(Math.cos(a) * 2.6, 3.4, Math.sin(a) * 2.6), new T.Vector3(Math.cos(a) * (3.6 + L * 0.3), 1.3, Math.sin(a) * (3.6 + L * 0.3)), new T.Vector3(Math.cos(a + 0.12) * (4 + L * 0.7), 0.35, Math.sin(a + 0.12) * (4 + L * 0.7)), new T.Vector3(Math.cos(a + 0.18) * (4.5 + L), -0.3, Math.sin(a + 0.18) * (4.5 + L))]);
       const r = shadowy(new T.Mesh(new T.TubeGeometry(curve, 18, 0.95 - (i % 3) * 0.12, 8), i % 2 ? bark : bark2)); g.add(r);
+      for (let k = 0.55; k <= 0.95; k += 0.1) { const rp = curve.getPoint(k); if (rp.y > 0.15 && Math.hypot(rp.x, rp.z) > 6.3) colliders.push({ x: cx + rp.x, z: cz + rp.z, r: (0.95 - (i % 3) * 0.12) * 0.85 }); }
       const mp = curve.getPoint(0.55); const m = shadowy(new T.Mesh(new T.IcosahedronGeometry(0.7, 1), moss)); m.scale.set(1.6, 0.3, 1.1); m.position.set(mp.x, mp.y + 0.7, mp.z); m.rotation.y = a; g.add(m);
     }
     /* musgo no tronco */
@@ -390,7 +406,7 @@
     const blobs = [];
     for (let i = 0; i < 54; i++) {
       const a = rnd() * TAU, rr = Math.sqrt(rnd()) * 16, y = 3.5 + (1 - Math.pow(rr / 16, 2)) * 8 + rnd() * 3.5, s2 = 3.1 + rnd() * 2.6;
-      const m = shadowy(new T.Mesh(blobGeo, leafMats[i % 6])); m.scale.set(s2, s2 * 0.78, s2); m.position.set(Math.cos(a) * rr, y, Math.sin(a) * rr); m.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); canopy.add(m); blobs.push({ m, y, ph: rnd() * 6, s: s2 });
+      const m = shadowy(new T.Mesh(blobGeo, leafMats[i % 6]), true, false); m.scale.set(s2, s2 * 0.78, s2); m.position.set(Math.cos(a) * rr, y, Math.sin(a) * rr); m.rotation.set(rnd() * 3, rnd() * 3, rnd() * 3); canopy.add(m); blobs.push({ m, y, ph: rnd() * 6, s: s2 });
     }
     for (let i = 0; i < 8; i++) {
       const a = i / 8 * TAU + 0.4, L = 9 + rnd() * 5, y0 = 10.5 + (i % 3) * 2.2;
@@ -400,16 +416,16 @@
     /* trepadeiras penduradas */
     const vines = [], vineMat = std('#4d8a52', 1);
     for (let i = 0; i < 16; i++) { const a = rnd() * TAU, rr = 6 + rnd() * 9, L = 3 + rnd() * 4.5, v = new T.Group(); v.position.set(Math.cos(a) * rr, 3.4 - rnd() * 1.5, Math.sin(a) * rr); const st = new T.Mesh(new T.CylinderGeometry(0.025, 0.03, L, 4), vineMat); st.position.y = -L / 2; v.add(st); for (let j = 0; j < 6; j++) { const lf = new T.Mesh(new T.SphereGeometry(0.1, 6, 4), vineMat); lf.scale.set(1.3, 0.5, 1); lf.position.set((j % 2 ? 1 : -1) * 0.08, -L * (0.15 + j * 0.15), 0); v.add(lf); } canopy.add(v); vines.push({ g: v, ph: rnd() * 6 }); }
-    colliders.push({ x: cx, z: cz, r: 3.9 });
+    colliders.push({ x: cx + 0.3, z: cz + 0.2, r: 6.4 });  /* o tronco é largo na base (≈7 m de raio no chão): colisão só na parte baixa */
     /* estela de pedra com musgo e pedrinhas de oferenda */
     const stele = shadowy(new T.Mesh(new T.BoxGeometry(1.1, 2.3, 0.5), std('#bdb6aa', 1))); stele.position.set(Math.cos(-0.9) * 9.2, 1.15, Math.sin(-0.9) * 9.2); stele.rotation.y = 0.9 + 0.1; stele.rotation.z = 0.05; g.add(stele); colliders.push({ x: cx + stele.position.x, z: cz + stele.position.z, r: 0.6 });
     const sm = shadowy(new T.Mesh(new T.IcosahedronGeometry(0.5, 1), moss)); sm.scale.set(1.2, 0.4, 0.7); sm.position.copy(stele.position).add(new T.Vector3(0, 1.2, 0)); g.add(sm);
     for (let i = 0; i < 6; i++) { const o = shadowy(new T.Mesh(new T.IcosahedronGeometry(0.16 + rnd() * 0.1, 0), std('#d4cdc2', 1))); o.position.set(stele.position.x + (rnd() - 0.5) * 1.8 + 0.3, 0.14, stele.position.z + (rnd() - 0.5) * 1.8 + 0.5); g.add(o); }
     /* luz rosada de noite */
-    const treeLight = new T.PointLight(0xff9ec4, 0, 46, 1.4); treeLight.position.set(cx, by + 11, cz); scene.add(treeLight);
+    const treeLight = new T.PointLight(0xff9ec4, 0, 46, 1.4); treeLight.position.set(cx, by + 11, cz); scene.add(treeLight); vlight(treeLight);
     const halo = glow(0xff9ec4, 40, 0); halo.position.set(cx, by + 17, cz); scene.add(halo);
     /* pétalas caindo devagar */
-    const PN = 700, pp = new Float32Array(PN * 3), pcol = new Float32Array(PN * 3), pseed = [], pc = new T.Color();
+    const PN = 480, pp = new Float32Array(PN * 3), pcol = new Float32Array(PN * 3), pseed = [], pc = new T.Color();
     for (let i = 0; i < PN; i++) { const a = rnd() * TAU, rr = Math.sqrt(rnd()) * 22; pseed.push({ a, rr, y: rnd() * 24, v: 0.32 + rnd() * 0.5, sw: 0.4 + rnd() * 0.9, ph: rnd() * 6 }); pc.set(['#ffd1e3', '#ffffff', '#f9b6d0', '#ffc2da'][i % 4]); pcol[i * 3] = pc.r; pcol[i * 3 + 1] = pc.g; pcol[i * 3 + 2] = pc.b; }
     const ptex = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'); const gr = x.createRadialGradient(32, 32, 2, 32, 32, 28); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.save(); x.translate(32, 32); x.rotate(-0.5); x.scale(1, 0.62); x.beginPath(); x.arc(0, 0, 27, 0, TAU); x.fill(); x.restore(); return new T.CanvasTexture(c); })();
     const pg = new T.BufferGeometry(); pg.setAttribute('position', new T.BufferAttribute(pp, 3)); pg.setAttribute('color', new T.BufferAttribute(pcol, 3));
@@ -464,7 +480,7 @@
     const bulge = shadowy(new T.Mesh(new T.SphereGeometry(1.1, 14, 8, 0, TAU, 0, Math.PI / 2), sn)); bulge.scale.set(1, 0.9, 1.3); bulge.position.set(0, 0, 2.4); ig.add(bulge);
     const door = new T.Mesh(new T.CircleGeometry(0.62, 16), new T.MeshStandardMaterial({ color: '#ffd9a0', emissive: new T.Color('#ffb15a'), emissiveIntensity: 0.4 })); door.position.set(0, 0.62, 3.53); ig.add(door); nightMats.push({ m: door.material, base: 0.4, k: 2.2 });
     scene.add(ig); colliders.push({ x: ix, z: iz, r: 2.6 });
-    const iglow = new T.PointLight(0xffb870, 0, 12, 1.8); iglow.position.set(ix, groundH(ix, iz) + 1.2, iz + 3.4); scene.add(iglow);
+    const iglow = new T.PointLight(0xffb870, 0, 12, 1.8); iglow.position.set(ix, groundH(ix, iz) + 1.2, iz + 3.4); scene.add(iglow); vlight(iglow);
     /* boneco de neve */
     const sx = cx + 2, sz = cz + 9.5, sg = new T.Group(); sg.position.set(sx, groundH(sx, sz), sz); const wm = std('#ffffff', 0.9);
     [[0.78, 0.7], [0.58, 1.8], [0.42, 2.65]].forEach(([r, y]) => { const b = shadowy(new T.Mesh(new T.SphereGeometry(r, 16, 12), wm)); b.position.y = y; sg.add(b); });
@@ -540,9 +556,9 @@
   }
 
   /* ───────── capim, flores e luzinhas ───────── */
-  const windU = { value: 0 };
+  const windU = { value: 0 }; let grassChunks = [];
   (() => {
-    const geo = new T.ConeGeometry(0.07, 0.62, 3, 3); geo.translate(0, 0.31, 0);
+    const geo = new T.ConeGeometry(0.07, 0.62, 3, 2, true); geo.translate(0, 0.31, 0);
     const mat = new T.MeshLambertMaterial({ color: 0xffffff });
     mat.onBeforeCompile = sh => {
       sh.uniforms.uWind = windU;
@@ -550,16 +566,23 @@
         vec3 ip=vec3(instanceMatrix[3][0],0.,instanceMatrix[3][2]);float k=pow(position.y/.62,1.6);
         transformed.x+=sin(uWind*1.6+ip.x*.45+ip.z*.3)*.2*k;transformed.z+=cos(uWind*1.3+ip.z*.5)*.14*k;`);
     };
-    const MAXN = 30000, im = new T.InstancedMesh(geo, mat, MAXN), m4 = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), c = new T.Color(); let n = 0;
+    const MAXN = 30000, m4 = new T.Matrix4(), q = new T.Quaternion(), e = new T.Euler(), c = new T.Color(); let n = 0; const gpos = [], gcol = [];
     const cA = new T.Color('#79c98b'), cB = new T.Color('#b3e58f'), cC = new T.Color('#5db07f');
     for (let t = 0; t < 150000 && n < MAXN; t++) {
       const a = rnd() * TAU, d = Math.sqrt(rnd()) * 57, x = Math.cos(a) * d, z = Math.sin(a) * d, h = baseH(x, z);
       if (h < 0.55 || inCorridor(x, z, 0.9) || resv(x, z, -1.6) || Math.hypot(x - PLAT.x, z - PLAT.z) < PLAT.r + 1.4 || (z < -2.5 && z > -9 && Math.abs(x) < 1.8)) continue;
       e.set((rnd() - 0.5) * 0.3, rnd() * TAU, (rnd() - 0.5) * 0.3); q.setFromEuler(e);
-      const s = 0.7 + rnd() * 0.7; m4.compose(new T.Vector3(x, h - 0.02, z), q, new T.Vector3(s, s * (0.45 + rnd() * 0.4), s)); im.setMatrixAt(n, m4);
-      c.copy(cA).lerp(cB, rnd()).lerp(cC, rnd() * 0.4); im.setColorAt(n, c); n++;
+      const s = 0.7 + rnd() * 0.7; m4.compose(new T.Vector3(x, h - 0.02, z), q, new T.Vector3(s, s * (0.45 + rnd() * 0.4), s)); gpos.push(m4.clone(), x, z); c.copy(cA).lerp(cB, rnd()).lerp(cC, rnd() * 0.4); gcol.push(c.clone()); n++;
     }
-    im.count = n; im.receiveShadow = true; scene.add(im);
+    /* a grama vira blocos de 19 m: o que está fora da tela ou longe demais nem é desenhado */
+    const CELL = 19, cells = new Map();
+    for (let i = 0; i < n; i++) { const x = gpos[i * 3 + 1], z = gpos[i * 3 + 2], k = Math.floor(x / CELL) + ',' + Math.floor(z / CELL); let a = cells.get(k); if (!a) cells.set(k, a = []); a.push(i); }
+    grassChunks = [];
+    for (const [, ids] of cells) {
+      const im = new T.InstancedMesh(geo, mat, ids.length); let sx = 0, sz = 0;
+      ids.forEach((id, j) => { im.setMatrixAt(j, gpos[id * 3]); im.setColorAt(j, gcol[id]); sx += gpos[id * 3 + 1]; sz += gpos[id * 3 + 2]; });
+      im.receiveShadow = true; const ccx = sx / ids.length, ccz = sz / ids.length; let rr = 1; ids.forEach(id => { rr = Math.max(rr, Math.hypot(gpos[id * 3 + 1] - ccx, gpos[id * 3 + 2] - ccz)); }); im.frustumCulled = false; im.userData.sph = new T.Sphere(new T.Vector3(ccx, 0.5, ccz), rr + 1.5); scene.add(im); grassChunks.push(im);
+    }
     /* flores */
     const fg = new T.IcosahedronGeometry(0.11, 0), fm = new T.MeshStandardMaterial({ roughness: 0.7, emissive: 0x000000 }), FN = 1500, fi = new T.InstancedMesh(fg, fm, FN);
     const fc = ['#ffffff', '#ffd1e3', '#ffe28a', '#c7b8ff', '#ffb4a8']; let k = 0;
@@ -771,21 +794,22 @@
     if (s.emote) { s.emote.t += dt; const u = s.emote.t / s.emote.dur; emoT = Math.sin(clamp(u, 0, 1) * Math.PI); if (spd > 0.6 || u >= 1) s.emote = null; else if (s.emote.k === 'spin') spin = ease(clamp(u * 1.15, 0, 1)) * TAU; }
     s.emo = ez(s.emo, s.emote ? 1 : 0, 9, dt);
     let wig = 0;
-    const mv = Math.min(1, s.move), A = lp(0.55, 0.85, s.run), ph = P.phase, sn = Math.sin(ph), idle = 1 - mv;
+    const mv = Math.min(1, s.move), A = lp(0.47, 0.78, s.run), ph = P.phase, sn = Math.sin(ph), idle = 1 - mv;
     const lf = Math.max(0, Math.cos(ph)), rf = Math.max(0, -Math.cos(ph)), kf = 0.55 + 0.7 * s.run;
     /* — chão — */
     let hL = -sn * A * mv + Math.sin(t * 0.5) * 0.03 * idle, hR = sn * A * mv - Math.sin(t * 0.5) * 0.03 * idle;
-    let kL = mv * (0.08 + kf * Math.pow(lf, 1.5)) + Math.max(0, Math.sin(t * 0.5)) * 0.1 * idle, kR = mv * (0.08 + kf * Math.pow(rf, 1.5)) + Math.max(0, -Math.sin(t * 0.5)) * 0.1 * idle;
+    let kL = mv * (0.16 + kf * Math.pow(lf, 1.5)) + Math.max(0, Math.sin(t * 0.5)) * 0.1 * idle, kR = mv * (0.16 + kf * Math.pow(rf, 1.5)) + Math.max(0, -Math.sin(t * 0.5)) * 0.1 * idle;
     const br = Math.sin(t * 1.8);
-    let aLx = sn * A * 0.62 * mv + Math.sin(t * 0.7) * 0.05 * idle, aRx = -sn * A * 0.62 * mv + Math.sin(t * 0.7 + 1.3) * 0.05 * idle;
-    let eL = -(0.3 + 0.1 * Math.sin(t * 0.9) * idle + mv * (0.12 + 0.3 * (0.5 + 0.5 * sn)) + 0.45 * s.run), eR = -(0.3 + 0.1 * Math.sin(t * 0.9 + 1.7) * idle + mv * (0.12 + 0.3 * (0.5 - 0.5 * sn)) + 0.45 * s.run);
+    const sa = Math.sin(ph - 0.55), sb = Math.sin(ph * 2 - 0.9);
+    let aLx = (sa * A * 0.5 + 0.04 * sb) * mv + Math.sin(t * 0.7) * 0.07 * idle, aRx = (-sa * A * 0.5 + 0.04 * sb) * mv + Math.sin(t * 0.7 + 1.3) * 0.07 * idle;
+    let eL = -(0.34 + 0.1 * Math.sin(t * 0.9) * idle + mv * (0.14 + 0.3 * (0.5 + 0.5 * sa)) + 0.5 * s.run), eR = -(0.34 + 0.1 * Math.sin(t * 0.9 + 1.7) * idle + mv * (0.14 + 0.3 * (0.5 - 0.5 * sa)) + 0.5 * s.run);
     let aLz = -(0.17 + 0.05 * Math.sin(t * 1.1) * idle) - 0.05 * s.run, aRz = -aLz;
-    let spY = -sn * 0.16 * mv, spX = (0.07 + 0.2 * s.run) * mv + (0.07 + 0.015 * br) * idle, spZ = clamp(-s.turn * 0.07, -0.3, 0.3) * mv + Math.cos(ph) * 0.035 * mv + Math.sin(t * 0.5 + 0.6) * 0.035 * idle;
-    let pvY = 0.95 + mv * (0.035 * Math.cos(2 * ph) - 0.02), pvRy = sn * 0.1 * mv, pvRz = sn * 0.03 * mv + Math.sin(t * 0.5) * 0.05 * idle;
+    let spY = -sa * 0.13 * mv, spX = (0.07 + 0.2 * s.run) * mv + (0.07 + 0.015 * br) * idle, spZ = clamp(-s.turn * 0.07, -0.3, 0.3) * mv + Math.cos(ph) * 0.035 * mv + Math.sin(t * 0.5 + 0.6) * 0.035 * idle;
+    let pvY = 0.95 + mv * (0.035 * Math.cos(2 * ph) - 0.02), pvRy = sn * 0.1 * mv, pvRz = sn * 0.05 * mv + Math.sin(t * 0.5) * 0.07 * idle;
     /* — ar: subindo, caindo, planando — */
     const rise = (vyN + 1) / 2;
     let aHL = lp(-0.2, -0.38, rise), aHR = lp(0.12, -0.08, rise), aKL = lp(0.5, 0.75, rise), aKR = lp(0.85, 0.35, rise);
-    let aAx = lp(-0.6, -2.3, rise), aAz = lp(0.95, 0.4, rise), aEl = lp(-0.2, -0.35, rise), aSpX = lp(0.1, 0.05, rise);
+    let aAx = lp(-0.5, -1.5, rise), aAz = lp(0.95, 0.6, rise), aEl = lp(-0.2, -0.35, rise), aSpX = lp(0.1, 0.05, rise);
     aHL = lp(aHL, 0.32, s.glide); aHR = lp(aHR, 0.4, s.glide); aKL = lp(aKL, 0.28, s.glide); aKR = lp(aKR, 0.2, s.glide);
     aAx = lp(aAx, -0.15, s.glide); aAz = lp(aAz, 1.45, s.glide); aEl = lp(aEl, -0.08, s.glide); aSpX = lp(aSpX, 0.5, s.glide);
     const W = s.air;
@@ -794,7 +818,7 @@
     spX = lp(spX, aSpX, W); spY = lp(spY, 0, W); spZ = lp(spZ, 0, W); pvY = lp(pvY, 0.95 + vyN * 0.02, W); pvRy = lp(pvRy, 0, W); pvRz = lp(pvRz, 0, W);
     /* — antecipação e aterrissagem — */
     const cr = Math.max(s.crouch * 0.85, s.land);
-    hL -= 0.75 * cr; hR -= 0.75 * cr; kL += 1.35 * cr; kR += 1.35 * cr; pvY -= 0.24 * cr; spX += 0.28 * cr; aLx += 0.35 * cr; aRx += 0.35 * cr;
+    hL -= 0.62 * cr; hR -= 0.62 * cr; kL += 1.15 * cr; kR += 1.15 * cr; pvY -= 0.2 * cr; spX += 0.28 * cr; aLx += 0.35 * cr; aRx += 0.35 * cr;
     /* — gestos — */
     const E = s.emo;
     if (s.emote && s.emote.k === 'wave') {
@@ -816,7 +840,7 @@
     /* — aplica nos ossos da Lyra — */
     if (!heroReady) { hero.g.position.set(P.x, P.y, P.z); hero.g.rotation.y = P.yaw; return; }
     const R = hero.rest, PIH = Math.PI / 2;
-    mb('J_Bip_C_Hips', (Math.sin(ph) * 0.9 * mv + Math.sin(t * 0.5) * 1.3 * idle) * (1 - st), (pvY - 0.95) * 66, 0);
+    mb('J_Bip_C_Hips', (Math.sin(ph) * 1.5 * mv + Math.sin(t * 0.5) * 2.2 * idle) * (1 - st), (pvY - 0.95) * 66, 0);
     rb('J_Bip_C_Hips', 0, pvRy, pvRz);
     rb('J_Bip_C_Spine', spX * 0.35, spY * 0.35, spZ * 0.35); rb('J_Bip_C_Chest', spX * 0.35, spY * 0.35, spZ * 0.35); rb('J_Bip_C_UpperChest', spX * 0.3 + Math.sin(t * 1.8) * 0.012, spY * 0.3, spZ * 0.3);
     /* braços: o modelo está em T, então "pendurar" é girar quase 90° em z */
@@ -1021,6 +1045,32 @@
     R.mg.attributes.position.needsUpdate = true; R.motes.material.opacity = 0.35 + AU.level * 0.65;
   }
 
+  const lpV = new T.Vector3();
+  function visChain(o) { for (; o; o = o.parent) if (o.userData.__hide || (o !== null && o.visible === false && !o.isLight)) return false; return true; }
+  function lightPool(dt) {
+    const cand = [];
+    for (const v of VL) {
+      if (v.intensity < 0.05 || !visChain(v.parent)) continue;
+      v.getWorldPosition(lpV); const d = Math.hypot(lpV.x - P.x, lpV.z - P.z), fall = Math.max(0, 1 - d / (v.distance + 18));
+      if (fall <= 0) continue; cand.push({ v, sc: v.intensity * fall * fall, x: lpV.x, y: lpV.y, z: lpV.z });
+    }
+    cand.sort((a, b) => b.sc - a.sc);
+    const used = new Set();
+    LP.forEach((s, i) => {
+      let want = cand[i] ? cand[i].v : null;
+      /* uma fonte que já está num slot continua nele, para não "pular" */
+      const keep = cand.find(c => c.v === s.cur); if (keep && cand.indexOf(keep) < 3) want = s.cur;
+      if (s.cur !== want) { s.f = Math.max(0, s.f - dt * 6); if (s.f <= 0.01) { s.cur = want && !used.has(want) ? want : null; } }
+      else s.f = Math.min(1, s.f + dt * 6);
+      if (s.cur) { used.add(s.cur); const c = cand.find(c => c.v === s.cur); if (c) { s.l.position.set(c.x, c.y, c.z); s.l.color.copy(s.cur.color); s.l.distance = s.cur.distance; s.l.decay = s.cur.decay; s.l.intensity = s.cur.intensity * s.f; } else s.l.intensity *= 0.8; } else s.l.intensity = 0;
+    });
+  }
+  const frus = new T.Frustum(), cvM = new T.Matrix4();
+  const GRASS_FAR = 64;
+  function cullStep() {
+    camera.updateMatrixWorld(); cvM.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse); frus.setFromProjectionMatrix(cvM);
+    for (const im of grassChunks) { const sp = im.userData.sph; im.visible = Math.hypot(P.x - sp.center.x, P.z - sp.center.z) - sp.radius < GRASS_FAR && frus.intersectsSphere(sp); }
+  }
   function lifeStep(dt, t) {
     windU.value = t;
     for (const c of clouds) { const d = c.userData; d.a += dt * d.sp * 0.25; c.position.x = Math.cos(d.a) * d.r; c.position.z = Math.sin(d.a) * d.r; }
@@ -1165,7 +1215,7 @@
       for (let i = 0; i < 3; i++) { const l = shadowy(new T.Mesh(new T.CylinderGeometry(0.07, 0.08, 0.8, 6), std('#7a5440', 1))); l.rotation.set(Math.PI / 2 - 0.5, i * 2.1, 0); l.position.set(Math.sin(i * 2.1) * 0.15, 0.14, Math.cos(i * 2.1) * 0.15); g.add(l); }
       const fl = [0, 1, 2].map(i => { const c = new T.Mesh(new T.ConeGeometry(0.24 - i * 0.05, 0.75 - i * 0.12, 8), new T.MeshBasicMaterial({ color: [0xff7a2e, 0xffb13d, 0xffe58a][i], transparent: true, opacity: 0.85, blending: T.AdditiveBlending, depthWrite: false, toneMapped: false })); c.position.y = 0.45 + i * 0.03; g.add(c); return c; });
       const gl = glow(0xff9a50, 4, 0.7); gl.position.y = 0.6; g.add(gl);
-      const light = new T.PointLight(0xff8a3c, 0, 16, 1.6); light.position.set(0, 1.1, 0); g.add(light);
+      const light = new T.PointLight(0xff8a3c, 0, 16, 1.6); light.position.set(0, 1.1, 0); g.add(light); vlight(light);
       const EN = 24, ep = new Float32Array(EN * 3), es = [], eg = new T.BufferGeometry(); for (let i = 0; i < EN; i++) es.push([rnd() * TAU, rnd() * 3, 0.3 + rnd() * 0.5]); eg.setAttribute('position', new T.BufferAttribute(ep, 3));
       g.add(Object.assign(new T.Points(eg, new T.PointsMaterial({ map: glowTex, color: 0xffb060, size: 0.22, transparent: true, depthWrite: false, blending: T.AdditiveBlending })), { frustumCulled: false }));
       colliders.push({ x: X, z: Z, r: 0.85 });
@@ -1255,14 +1305,78 @@
   $('wOff').addEventListener('click', () => { for (const k in S.eq) S.eq[k] = ''; save(); applyCos(); });
   /* com o guarda-roupa aberto, a câmera se aproxima para você se ver */
   function wardCam(dt) { if (!wardOpen || drag) return; CAM.dist = ez(CAM.dist, 5.4, 3, dt); CAM.pitch = ez(CAM.pitch, 0.16, 3, dt); let d = P.yaw + 0.5 - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); CAM.yaw += d * (1 - Math.exp(-dt * 3)); }
+
+  /* ───────── otimização da cena (feita uma vez, depois que tudo foi criado) ─────────
+     1) objetos pequenos que não se mexem são agrupados em blocos de 20 m; blocos longe de você nem são desenhados;
+     2) objetos minúsculos deixam de projetar sombra (ninguém vê a sombra de uma pedrinha);
+     3) as sombras são recalculadas em quadros alternados. */
+  const cellGroups = []; let mergedCount = 0;
+  (function optimizeScene() {
+    scene.updateMatrixWorld(true);
+    const wp = new T.Vector3(), skip = o => { for (let p = o; p; p = p.parent) if (p === hero.g || p === water) return true; return false; };
+    const list = []; scene.children.forEach(o => { if (o.isLight || o.isCamera || o === water || o === sun.target || o === hero.g || o.isSprite) return; list.push(o); });
+    const pos0 = new Map(); list.forEach(o => { o.getWorldPosition(wp); pos0.set(o, wp.clone()); });
+    const snap = new Map(); list.forEach(o => o.traverse(n => { if (n.isMesh) snap.set(n, n.matrixWorld.elements.slice()); }));
+    /* roda a animação um pouco para descobrir o que anda sozinho (borboletas, nuvens, barcos...) */
+    for (let k = 1; k <= 3; k++) { try { lifeStep(0.9, 40 + k * 0.9); isleStep(0.9, 40 + k * 0.9); } catch (e) {} } scene.updateMatrixWorld(true);
+    const moving = new Set(); snap.forEach((el, n) => { const e2 = n.matrixWorld.elements; for (let i = 0; i < 16; i++) if (Math.abs(e2[i] - el[i]) > 1e-5) { moving.add(n); break; } });
+    const cells = new Map(), box = new T.Box3(), sph = new T.Sphere();
+    for (const o of list) {
+      if (o.isPoints || o.isInstancedMesh || o.frustumCulled === false || o.isLine) continue;
+      o.getWorldPosition(wp); if (wp.distanceTo(pos0.get(o)) > 0.15) continue;
+      box.setFromObject(o); if (box.isEmpty()) continue; box.getBoundingSphere(sph);
+      if (sph.radius > 7 || sph.center.y > 60) continue;
+      const k = Math.floor(sph.center.x / 20) + ',' + Math.floor(sph.center.z / 20); let c = cells.get(k);
+      if (!c) { c = new T.Group(); c.matrixAutoUpdate = true; c.userData.cx = (Math.floor(sph.center.x / 20) + 0.5) * 20; c.userData.cz = (Math.floor(sph.center.z / 20) + 0.5) * 20; cells.set(k, c); scene.add(c); cellGroups.push(c); }
+      c.add(o);
+    }
+    scene.traverse(o => {
+      if (!o.isMesh || !o.castShadow || skip(o)) return;
+      if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+      if (o.geometry.boundingSphere.radius * o.matrixWorld.getMaxScaleOnAxis() < 0.3) o.castShadow = false;
+    });
+    /* junta, em cada bloco, todas as peças estáticas de mesmo material numa malha só (centenas de chamadas de desenho viram dezenas) */
+    const sig = (m, n) => [m.color.getHex(), m.roughness, m.metalness, m.side, m.flatShading ? 1 : 0, m.fog ? 1 : 0, n.castShadow ? 1 : 0, n.receiveShadow ? 1 : 0].join('|');
+    const nm = new T.Matrix3(), vp = new T.Vector3(), vn = new T.Vector3();
+    for (const cg of cellGroups) {
+      const buckets = new Map(), meshes = [];
+      cg.traverse(n => { if (n.isMesh && !n.isSkinnedMesh && !n.isInstancedMesh && !moving.has(n)) meshes.push(n); });
+      for (const n of meshes) {
+        const m = n.material, g = n.geometry;
+        if (Array.isArray(m) || !m.isMeshStandardMaterial || m.transparent || m.map || m.vertexColors || m.alphaTest || m.emissive.getHex() !== 0 || m.emissiveMap) continue;
+        if (!g.attributes.position || !g.attributes.normal || g.morphAttributes.position) continue;
+        if (n.userData.keep || !n.visible) continue;
+        for (let p = n; p && p !== cg; p = p.parent) if (!p.visible) { p = null; break; }
+        const k = sig(m, n); let b = buckets.get(k); if (!b) buckets.set(k, b = { m, cast: n.castShadow, recv: n.receiveShadow, list: [] }); b.list.push(n);
+      }
+      for (const [, b] of buckets) {
+        if (b.list.length < 2) continue;
+        let nv = 0, ni = 0; for (const n of b.list) { const g = n.geometry; nv += g.attributes.position.count; ni += g.index ? g.index.count : g.attributes.position.count; }
+        const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = new Uint32Array(ni); let vo = 0, io = 0;
+        for (const n of b.list) {
+          const g = n.geometry, P0 = g.attributes.position, N0 = g.attributes.normal, mw = n.matrixWorld; nm.getNormalMatrix(mw);
+          for (let i = 0; i < P0.count; i++) { vp.fromBufferAttribute(P0, i).applyMatrix4(mw); vn.fromBufferAttribute(N0, i).applyMatrix3(nm).normalize(); pos.set([vp.x, vp.y, vp.z], (vo + i) * 3); nor.set([vn.x, vn.y, vn.z], (vo + i) * 3); }
+          if (g.index) for (let i = 0; i < g.index.count; i++) idx[io++] = g.index.getX(i) + vo; else for (let i = 0; i < P0.count; i++) idx[io++] = vo + i;
+          vo += P0.count; n.parent.remove(n);
+        }
+        const mg = new T.BufferGeometry(); mg.setAttribute('position', new T.BufferAttribute(pos, 3)); mg.setAttribute('normal', new T.BufferAttribute(nor, 3)); mg.setIndex(new T.BufferAttribute(idx, 1)); mg.computeBoundingSphere();
+        const mm = new T.Mesh(mg, b.m); mm.castShadow = b.cast; mm.receiveShadow = b.recv; cg.add(mm); mergedCount += b.list.length;
+      }
+    }
+  })();
+
+  const CELL_FAR = 105;
+  function cellStep() { for (const c of cellGroups) c.visible = Math.hypot(P.x - c.userData.cx, P.z - c.userData.cz) < CELL_FAR; }
   applyCos(); postSite();
 
-  let lastQ = 0;
+  let lastQ = 0, lastFrame = 0, shFlip = 0;
   function loop() {
     requestAnimationFrame(loop);
+    const now = performance.now(); if (now - lastFrame < 14.5) return; lastFrame = now;
     const dt = Math.min(0.05, clock.getDelta()), t = clock.elapsedTime; U.uTime.value = t;
-    step(dt, t); dayStep(dt); wardCam(dt); camStep(dt); reactorStep(dt, t); lifeStep(dt, t); cosStep(dt, t); isleStep(dt, t); exStep(dt, t);
+    step(dt, t); dayStep(dt); wardCam(dt); camStep(dt); reactorStep(dt, t); lifeStep(dt, t); cosStep(dt, t); isleStep(dt, t); exStep(dt, t); cullStep(); lightPool(dt); cellStep();
     if (hintT && t > hintT) $('hint').classList.add('off');
+    renderer.shadowMap.needsUpdate = ((shFlip++) & 1) === 0;
     renderer.render(scene, camera);
     frames++; accT += dt;
     if (frames === 90) {
@@ -1271,7 +1385,7 @@
     }
   }
   applyQ(); resize(); dayStep(0.001); camStep(1);
-  let vt = 100; window.__ilha = { EX, exMeshes, initEx, ISLES, DOCKS, travel, curIsle, shot: () => { camStep(1); renderer.render(scene, camera); }, PS, hero, THREE: T, groundH, tick: (n, dt) => { for (let i = 0; i < n; i++) { vt += dt; step(dt, vt); dayStep(dt); camStep(dt); cosStep(dt, vt); lifeStep(dt, vt); isleStep(dt, vt); exStep(dt, vt); } }, keys, P, CAM, PS, S, ITEMS, collect, toggleWard, startEmote, setPhase: p => { phase = p; }, AU };
+  let vt = 100; window.__ilha = { merged: () => mergedCount, renderer, scene, camera, EX, exMeshes, initEx, ISLES, DOCKS, travel, curIsle, shot: () => { camStep(1); cullStep(); cellStep(); renderer.shadowMap.needsUpdate = true; renderer.render(scene, camera); }, PS, hero, THREE: T, groundH, tick: (n, dt) => { for (let i = 0; i < n; i++) { vt += dt; step(dt, vt); dayStep(dt); camStep(dt); cosStep(dt, vt); lifeStep(dt, vt); isleStep(dt, vt); exStep(dt, vt); cullStep(); lightPool(dt); cellStep(); } }, keys, P, CAM, PS, S, ITEMS, collect, toggleWard, startEmote, setPhase: p => { phase = p; }, AU };
   toParent({ nb: 'ready' });
   loop();
 })();

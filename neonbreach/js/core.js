@@ -50,9 +50,11 @@ window.SC = {};
 
   /* laço de animação com delta-time; retorna função para parar */
   SC.loop = function (fn) {
-    let on = true, last = performance.now(), t = 0;
+    let on = true, last = performance.now(), t = 0, due = 0;
     (function f(now) {
       if (!on) return;
+      if (now < due - 2) { requestAnimationFrame(f); return; }      /* ~60 quadros por segundo no máximo (telas de 144 Hz não precisam do dobro) */
+      due = Math.max(due + 16.67, now - 16.67);
       const dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
       fn(dt, t); requestAnimationFrame(f);
     })(last);
