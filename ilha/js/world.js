@@ -45,7 +45,11 @@
   const ISLES = [
     { id: 'T', name: 'Ilha da Árvore Milenar', desc: 'Uma árvore enorme e muito antiga, com pétalas caindo, e um banco para ficar olhando.', x: 118, z: 0, R: 26, p: 2.0 },
     { id: 'N', name: 'Ilha Nevada', desc: 'Neve macia, pinheiros, um iglu e, à noite, a aurora.', x: -34, z: -128, R: 24, p: 0.7 },
-    { id: 'D', name: 'Ilha das Dunas', desc: 'Areia dourada, um oásis com palmeiras e ruínas que brilham.', x: -120, z: 18, R: 27, p: 4.1 }
+    { id: 'D', name: 'Ilha das Dunas', desc: 'Areia dourada, um oásis com palmeiras e ruínas que brilham.', x: -120, z: 18, R: 27, p: 4.1 },
+    { id: 'C', name: 'Ilha dos Cristais', desc: 'Uma caverna cheia de cristais que brilham no ritmo da música.', x: 64, z: -150, R: 24, p: 5.2 },
+    { id: 'W', name: 'Ilha das Cachoeiras', desc: 'Cachoeiras em degraus, uma lagoa clara e névoa no ar.', x: 162, z: -98, R: 27, p: 1.3 },
+    { id: 'F', name: 'Ilha do Farol', desc: 'Um farol antigo com vista para o mar inteiro.', x: -64, z: 152, R: 19, p: 3.3 },
+    { id: 'V', name: 'Vila Flutuante', desc: 'Casinhas sobre palafitas, passarelas e luzes sobre a água.', x: 122, z: 134, R: 23, p: 2.6 }
   ];
   const isleR = (I, th) => I.R * (1 + 0.1 * Math.sin(3 * th + I.p) + 0.06 * Math.sin(5 * th + I.p / 3) + 0.04 * Math.sin(8 * th));
   function isleH(I, x, z) {
@@ -55,6 +59,14 @@
     if (d > 0) {
       const w = smooth(0, 9, d);
       if (I.id === 'T') h += (Math.sin(x * 0.21) * Math.cos(z * 0.17) * 0.22 + Math.sin(x * 0.09 + z * 0.11) * 0.25) * w + 0.5 * Math.exp(-(dx * dx + dz * dz) / 260) * w;
+      else if (I.id === 'C') { h += (Math.sin(x * 0.17) * Math.cos(z * 0.15) * 0.45 + Math.sin(x * 0.08 + z * 0.1) * 0.5) * w + 1.3 * Math.exp(-(dx * dx + dz * dz) / 230) * w; h = lerp(h, 1.0, smooth(11, 7.5, Math.hypot(dx, dz - 1))); { const ea = Math.atan2(-I.z, -I.x), al = dx * Math.cos(ea) + dz * Math.sin(ea), pp = Math.abs(-dx * Math.sin(ea) + dz * Math.cos(ea)); if (al > 0 && al < 24) h = lerp(h, lerp(1.0, h, smooth(11, 24, al)), smooth(5, 3, pp)); } }
+      else if (I.id === 'W') {
+        h += (Math.sin(x * 0.15) * Math.cos(z * 0.13) * 0.22) * w;
+        h += (3.2 * smooth(2, -3, dz) + 3.4 * smooth(-6, -11, dz)) * smooth(25, 12, Math.abs(dx)) * w;
+        h = lerp(h, 0.12, smooth(9, 5.5, Math.hypot(dx, dz - 8)));
+      }
+      else if (I.id === 'F') { h = Math.min(d * 0.28, 3.2) + (Math.sin(x * 0.2) * Math.cos(z * 0.18) * 0.3) * w; h = lerp(h, 3.4, smooth(6.5, 4, Math.hypot(dx, dz))); }
+      else if (I.id === 'V') { h = Math.min(d * 0.26, 0.62) + Math.sin(x * 0.3) * Math.cos(z * 0.27) * 0.06 * w; }
       else if (I.id === 'N') { h += (Math.sin(x * 0.16) * Math.cos(z * 0.14) * 0.5 + Math.sin(x * 0.07 + z * 0.09) * 0.6 + Math.sin(x * 0.31 + z * 0.27) * 0.12) * w; h = lerp(h, 0.95, smooth(8, 5.6, Math.hypot(dx - 7, dz + 4))); h = lerp(h, 1.2, smooth(6, 3.8, Math.hypot(dx + 8, dz - 6))); }
       else { h += (Math.sin(x * 0.12 + z * 0.05) * 0.9 + Math.sin(x * 0.07 - z * 0.11 + 1) * 0.7 + Math.abs(Math.sin(x * 0.19 + z * 0.13)) * 0.45) * w * 0.8; h = lerp(h, 0.35, smooth(9, 5.5, Math.hypot(dx + 3, dz - 2))); h = lerp(h, 0.9, smooth(7, 4.5, Math.hypot(dx - 10, dz + 8))); }
     }
@@ -66,12 +78,14 @@
     for (const d of DECKS) { const dx = x - d.x, dz = z - d.z, c = Math.cos(d.ang), s = Math.sin(d.ang), u = dx * c + dz * s, v = -dx * s + dz * c; if (u > 0 && u < d.len && Math.abs(v) < d.hw) h = Math.max(h, d.y + (d.arch ? d.arch * Math.sin(Math.PI * u / d.len) : 0)); }
     return h;
   }
+  const extH = [];                       /* alturas extras (gruta, plataformas...) registradas pelos módulos */
   function groundH(x, z) {
     let h = baseH(x, z);
     for (const I of ISLES) { const v = isleH(I, x, z); if (v > h) h = v; }
     const dk = deckH(x, z); if (dk > h) h = dk;
     if (Math.hypot(x - PLAT.x, z - PLAT.z) < PLAT.r) h = Math.max(h, PLAT.top);
     if (x > JET.x0 && x < JET.x1 && Math.abs(z) < JET.hw) h = Math.max(h, JET.y);
+    for (let i = 0; i < extH.length; i++) { const v = extH[i](x, z); if (v > h) h = v; }
     return h;
   }
   function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -155,11 +169,11 @@
   const water = new T.Mesh(new T.PlaneGeometry(1600, 1600, 1, 1).rotateX(-Math.PI / 2), new T.ShaderMaterial({
     transparent: true, depthWrite: false, uniforms: Object.assign({ uFogN: { value: 70 }, uFogF: { value: 330 }, uIs: { value: [new T.Vector4(0, 0, 52, 1.2)].concat(ISLES.map(I => new T.Vector4(I.x, I.z, I.R, I.p))) } }, U),
     vertexShader: 'varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}',
-    fragmentShader: `uniform vec4 uIs[4];uniform float uTime,uNight,uFogN,uFogF;uniform vec3 uSunDir,uMoonDir,uSunCol,uTop,uHor,uDeep,uShallow,uFog,uPl;varying vec3 vW;
+    fragmentShader: `uniform vec4 uIs[${1 + ISLES.length}];uniform float uTime,uNight,uFogN,uFogF;uniform vec3 uSunDir,uMoonDir,uSunCol,uTop,uHor,uDeep,uShallow,uFog,uPl;varying vec3 vW;
       float shoreR(float th,float R,float p){return R*(1.+.1*sin(3.*th+p)+.06*sin(5.*th+p/3.)+.04*sin(8.*th));}
       float hs(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
       float vn(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hs(i),hs(i+vec2(1,0)),f.x),mix(hs(i+vec2(0,1)),hs(i+vec2(1,1)),f.x),f.y);}
-      void main(){vec2 xz=vW.xz;float th=0.,dist=1e9;for(int i=0;i<4;i++){vec2 q=xz-uIs[i].xy;float rr=length(q),tt=atan(q.y,q.x),dd=rr-shoreR(tt,uIs[i].z,uIs[i].w);if(dd<dist){dist=dd;th=tt;}}
+      void main(){vec2 xz=vW.xz;float th=0.,dist=1e9;for(int i=0;i<${1 + ISLES.length};i++){vec2 q=xz-uIs[i].xy;float rr=length(q);if(rr>uIs[i].z*1.3+12.)continue;float tt=atan(q.y,q.x),dd=rr-shoreR(tt,uIs[i].z,uIs[i].w);if(dd<dist){dist=dd;th=tt;}}
         vec2 g=vec2(0.);
         g+=vec2(.8,.6)*cos(dot(vec2(.8,.6),xz)*.55+uTime*.8)*.55*.05;
         g+=vec2(-.6,.8)*cos(dot(vec2(-.6,.8),xz)*.9+uTime*1.1)*.9*.035;
@@ -293,7 +307,7 @@
     const p = g.attributes.position, col = new Float32Array(p.count * 3), c = new T.Color();
     const sand = new T.Color('#f3e3b9'), wet = new T.Color('#d8c28f'), floor = new T.Color('#9fd3c7'), deep = new T.Color('#5aa7ad');
     const sandD = new T.Color('#e6c485'), sandD2 = new T.Color('#d8ae66'), sandD3 = new T.Color('#f0d9a2'), snA = new T.Color('#f4f9ff'), snB = new T.Color('#dcecf9'), snC = new T.Color('#c3dcf0');
-    const gA = new T.Color('#7fcf93'), gB = new T.Color('#a8e08f'), gC = new T.Color('#5fb38a'), pk = new T.Color('#f6d3e2');
+    const c2 = new T.Color(), gA = new T.Color('#7fcf93'), gB = new T.Color('#a8e08f'), gC = new T.Color('#5fb38a'), pk = new T.Color('#f6d3e2');
     for (let i = 0; i < p.count; i++) {
       const lx = p.getX(i), lz = p.getZ(i), x = lx + I.x, z = lz + I.z, h = isleH(I, x, z); p.setY(i, h); p.setX(i, lx); p.setZ(i, lz);
       const n = Math.sin(x * 0.7) * Math.sin(z * 0.6) * 0.5 + 0.5, n2 = Math.sin(x * 0.23 + 2) * Math.cos(z * 0.31) * 0.5 + 0.5, dc = Math.hypot(lx, lz);
@@ -301,6 +315,10 @@
       else if (h < 0.05) c.copy(floor).lerp(wet, smooth(-0.6, 0.05, h));
       else if (h < 0.5) c.copy(wet).lerp(sand, smooth(0.05, 0.3, h));
       else if (I.id === 'T') { c.copy(gC).lerp(gA, n * 0.7).lerp(gB, n2 * 0.4); c.lerp(pk, smooth(17, 5, dc) * (0.4 + 0.5 * n2)); c.lerp(sand, smooth(0.62, 0.48, h) * 0.6); }
+      else if (I.id === 'C') { c.set('#7a6f9a').lerp(c2.set('#a89cc8'), n * 0.7).lerp(c2.set('#56507a'), n2 * 0.5); c.lerp(sand, smooth(0.62, 0.48, h) * 0.3); }
+      else if (I.id === 'W') { c.copy(gC).lerp(gA, n * 0.7).lerp(gB, n2 * 0.4); const cl = smooth(2.2, 4.2, h) * (0.5 + 0.5 * n2); c.lerp(c2.set('#9aa3a8'), cl * 0.85); if (Math.hypot(lx, lz - 8.5) < 8) c.lerp(c2.set('#d6e6d0'), smooth(8, 5, Math.hypot(lx, lz - 8.5)) * 0.5); c.lerp(sand, smooth(0.62, 0.48, h) * 0.5); }
+      else if (I.id === 'F') { c.copy(gC).lerp(gB, n * 0.5); c.lerp(c2.set('#8d96a0'), smooth(1.4, 2.6, h) * (0.6 + 0.4 * n2)); if (h > 3.0) c.lerp(gA, 0.45); c.lerp(sand, smooth(0.62, 0.48, h) * 0.5); }
+      else if (I.id === 'V') { c.copy(sand).lerp(c2.set('#e9d6a4'), n * 0.5).lerp(c2.set('#9ccf8a'), smooth(0.35, 0.6, h) * 0.35 * n2); }
       else if (I.id === 'N') { c.copy(snA).lerp(snB, n * 0.6).lerp(snC, smooth(1.6, 0.6, h) * 0.8 + n2 * 0.15); if (Math.hypot(lx - 7, lz + 4) < 5.8) c.set('#bfe3f5'); c.lerp(sand, smooth(0.62, 0.48, h) * 0.4); }
       else { c.copy(sandD).lerp(sandD2, n * 0.6).lerp(sandD3, n2 * 0.5); c.multiplyScalar(0.92 + 0.12 * Math.sin(x * 0.19 + z * 0.13)); if (Math.hypot(lx + 3, lz - 2) < 6) c.lerp(new T.Color('#6dbb86'), smooth(6, 3, Math.hypot(lx + 3, lz - 2)) * 0.5); }
       col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
@@ -332,6 +350,7 @@
     DOCKS[I.id] = { arrive: { x: sx + c * (len - 4.5), z: sz + s * (len - 4.5), yaw: Math.atan2(-c, -s) }, boat: { x: bx, z: bz } };
   }
   makeDock(ISL.T, ISL.T.x, ISL.T.z + 100); makeDock(ISL.N, 0, 0); makeDock(ISL.D, 0, 0);
+  makeDock(ISL.C, 0, 0); makeDock(ISL.W, ISL.W.x - 40, ISL.W.z + 80); makeDock(ISL.F, 0, 0); makeDock(ISL.V, 0, 0);
 
   /* ponte da ilha principal até a Ilha da Árvore */
   (() => {
@@ -349,7 +368,7 @@
   /* ── prompt ("E · sentar", "E · viajar") e painel do barco ── */
   const promptEl = $('prompt'), bpanel = $('bpanel'), fadeEl = $('fade'); let boatOpen = false;
   function boatNear() { for (const k in DOCKS) { const b = DOCKS[k].boat; if (Math.hypot(P.x - b.x, P.z - b.z) < 4.1 && Math.abs(P.y - groundH(b.x, b.z)) < 3) return k; } return null; }
-  function curIsle() { let best = 'main', bd = Math.hypot(P.x, P.z) / 52; for (const I of ISLES) { const d = Math.hypot(P.x - I.x, P.z - I.z) / I.R; if (d < bd) { bd = d; best = I.id; } } return best; }
+  function curIsle() { if (P.x > 700) return 'S'; let best = 'main', bd = Math.hypot(P.x, P.z) / 52; for (const I of ISLES) { const d = Math.hypot(P.x - I.x, P.z - I.z) / I.R; if (d < bd) { bd = d; best = I.id; } } return best; }
   const DEST = [{ id: 'main', name: 'Ilha Principal', desc: 'O santuário, o banco e o caminho de pedras.' }].concat(ISLES.map(I => ({ id: I.id, name: I.name, desc: I.desc })));
   function openBoat() {
     boatOpen = true; const cur = curIsle(), box = $('bList'); box.replaceChildren();
@@ -551,7 +570,7 @@
     for (const n of nightMats) n.m.emissiveIntensity = n.base + night * n.k;
     for (let i = 0; i < dockBoats.length; i++) { const b = dockBoats[i]; b.position.y = Math.sin(t * 1.1 + i) * 0.05 - 0.02; b.rotation.z = Math.sin(t * 0.9 + i) * 0.03; }
     /* dica de tecla */
-    let txt = ''; if (!P.sit && !boatOpen) { if (boatNear()) txt = 'E · viajar de barco'; else if (nearestBench()) txt = 'E · sentar'; }
+    let txt = ''; if (!P.sit && !boatOpen) { if (boatNear()) txt = 'E · viajar de barco'; else if (XC.hint && (txt = XC.hint())) { } else if (nearestBench()) txt = 'E · sentar'; else txt = ''; }
     if (txt !== isleStep.t) { isleStep.t = txt; promptEl.textContent = txt; promptEl.style.display = txt ? 'block' : 'none'; }
   }
 
@@ -884,6 +903,7 @@
   addEventListener('keydown', e => {
     if (e.metaKey || e.ctrlKey || e.altKey) return;
     const k = e.key.toLowerCase(); keys[k] = true;
+    if (XC.key && XC.key(k, e)) { hideHint(); return; }
     if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
     if (k === ' ' && !e.repeat) jump(); if (k === 'e' && !e.repeat) sitToggle(); if (k === 'q' && !e.repeat) startEmote('wave'); if (k === 'r' && !e.repeat) startEmote('spin');
     if (k === 't' && !e.repeat) toggleTime(); if (k === 'c' && !e.repeat) toggleWard(); if (k === 'escape') { if (boatOpen) closeBoat(); else if (timeOpen) toggleTime(false); else if (wardOpen) toggleWard(false); else toParent({ nb: 'exit' }); }
@@ -893,15 +913,16 @@
   addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
   const cv = $('c');
   cv.addEventListener('pointerdown', e => {
-    cv.focus({ preventScroll: true }); hideHint();
+    cv.focus({ preventScroll: true }); hideHint(); if (XC.ptr && XC.ptr(e, 'down')) return;
     if (e.pointerType === 'touch' && e.clientX < innerWidth * 0.45) { joy.on = true; joy.id = e.pointerId; joy.cx = e.clientX; joy.cy = e.clientY; const j = $('joy'); j.style.left = (e.clientX - 58) + 'px'; j.style.bottom = (innerHeight - e.clientY - 58) + 'px'; cv.setPointerCapture(e.pointerId); return; }
     drag = { id: e.pointerId, x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId);
   });
   cv.addEventListener('pointermove', e => {
+    if (XC.ptr && XC.ptr(e, 'move')) return;
     if (joy.on && e.pointerId === joy.id) { let dx = e.clientX - joy.cx, dy = e.clientY - joy.cy; const m = Math.hypot(dx, dy), mx = 48; if (m > mx) { dx *= mx / m; dy *= mx / m; } joy.x = dx / mx; joy.y = dy / mx; $('joy').firstElementChild.style.transform = `translate(${dx}px,${dy}px)`; return; }
     if (drag && e.pointerId === drag.id) { CAM.yaw -= (e.clientX - drag.x) * 0.0055; CAM.pitch = clamp(CAM.pitch + (e.clientY - drag.y) * 0.0045, -0.08, 1.25); drag.x = e.clientX; drag.y = e.clientY; CAM.auto = 0; }
   });
-  const pend = e => { if (joy.on && e.pointerId === joy.id) { joy.on = false; joy.x = joy.y = 0; $('joy').firstElementChild.style.transform = ''; } if (drag && e.pointerId === drag.id) drag = null; };
+  const pend = e => { if (XC.ptr) XC.ptr(e, 'up'); if (joy.on && e.pointerId === joy.id) { joy.on = false; joy.x = joy.y = 0; $('joy').firstElementChild.style.transform = ''; } if (drag && e.pointerId === drag.id) drag = null; };
   cv.addEventListener('pointerup', pend); cv.addEventListener('pointercancel', pend);
   cv.addEventListener('wheel', e => { CAM.dist = clamp(CAM.dist * (1 + e.deltaY * 0.001), 4.5, 18); e.preventDefault(); }, { passive: false });
   $('aJump').addEventListener('pointerdown', () => { holdJump = true; jump(); }); addEventListener('pointerup', () => { holdJump = false; }); $('aEmo').addEventListener('click', () => startEmote(Math.random() < 0.6 ? "wave" : "spin"));  $('aSit').addEventListener('click', sitToggle); $('bBack').addEventListener('click', () => toParent({ nb: 'exit' }));
@@ -914,6 +935,7 @@
   function sitToggle() {
     if (P.sit) { standUp(); return; }
     if (boatNear()) { openBoat(); return; }
+    if (XC.act && XC.act()) return;
     const b = nearestBench();
     if (b) { P.x = b.x - b.fx * 0.1; P.z = b.z - b.fz * 0.1; P.yaw = b.yaw; P.bench = b; }
     P.sit = true; P.vx = P.vz = 0; P.nearBench = !!b;
@@ -975,7 +997,7 @@
     /* entrada */
     let ix = 0, iz = 0;
     if (keys['w'] || keys['arrowup']) iz -= 1; if (keys['s'] || keys['arrowdown']) iz += 1; if (keys['a'] || keys['arrowleft']) ix -= 1; if (keys['d'] || keys['arrowright']) ix += 1;
-    ix += joy.x; iz += joy.y; const im = Math.min(1, Math.hypot(ix, iz)); fast = !!keys['n'];
+    ix += joy.x; iz += joy.y; if (XC.modal) { ix = iz = 0; } const im = Math.min(1, Math.hypot(ix, iz)); fast = !!keys['n'];
     if (im > 0.08) { if (P.sit) standUp(); }
     const sy = Math.sin(CAM.yaw), cy = Math.cos(CAM.yaw);
     const wx = (ix * cy + iz * sy), wz = (-ix * sy + iz * cy), wl = Math.hypot(wx, wz) || 1;
@@ -984,7 +1006,7 @@
     const k = 1 - Math.exp(-dt * (P.sit ? 12 : 9)); P.vx += (tvx - P.vx) * k; P.vz += (tvz - P.vz) * k;
     /* movimento + colisão + borda da água */
     let nx = P.x + P.vx * dt, nz = P.z + P.vz * dt;
-    if (!P.sit) for (const c of colliders) { const dx = nx - c.x, dz = nz - c.z, d = Math.hypot(dx, dz), m = c.r + 0.32; if (d < m && d > 0.001) { nx = c.x + dx / d * m; nz = c.z + dz / d * m; } }
+    if (!P.sit) for (const c of colliders) { if (c.y0 !== undefined && (P.y < c.y0 || P.y > c.y1)) continue; const dx = nx - c.x, dz = nz - c.z, d = Math.hypot(dx, dz), m = c.r + 0.32; if (d < m && d > 0.001) { nx = c.x + dx / d * m; nz = c.z + dz / d * m; } }
     const OK = (x, z) => groundH(x, z) > -0.36;
     if (OK(nx, nz)) { P.x = nx; P.z = nz; } else if (OK(nx, P.z)) P.x = nx; else if (OK(P.x, nz)) P.z = nz;
     const gh = groundH(P.x, P.z);
@@ -1017,6 +1039,7 @@
     let px = CAM.tx + Math.sin(CAM.yaw) * cp * dist, py = CAM.ty + Math.sin(CAM.pitch) * dist, pz = CAM.tz + Math.cos(CAM.yaw) * cp * dist;
     py = Math.max(py, groundH(px, pz) + 0.9, 0.9);
     camera.position.set(px, py, pz); camera.lookAt(CAM.tx, CAM.ty, CAM.tz);
+    if (XC.camOv) XC.camOv(dt);
     sky.position.copy(camera.position);
   }
 
@@ -1306,6 +1329,17 @@
   /* com o guarda-roupa aberto, a câmera se aproxima para você se ver */
   function wardCam(dt) { if (!wardOpen || drag) return; CAM.dist = ez(CAM.dist, 5.4, 3, dt); CAM.pitch = ez(CAM.pitch, 0.16, 3, dt); let d = P.yaw + 0.5 - CAM.yaw; d = Math.atan2(Math.sin(d), Math.cos(d)); CAM.yaw += d * (1 - Math.exp(-dt * 3)); }
 
+  /* ───────── módulos extras (jardim, pesca, ilhas novas, livro...) ─────────
+     Cada módulo fica num arquivo próprio (js/x-*.js), se registra em window.IlhaExt e recebe este "contexto" com as ferramentas do mundo. */
+  const XC = {
+    T, THREE: T, scene, camera, renderer, $, P, PS, CAM, keys, cv, hero, hemi, sun, water, U, AU, clock, colliders, extH, bio, nightMats, lamps, ISLES, ISL, DECKS, DOCKS, DEST, BENCHES, isleH, isleR, isleTerrain, groundH, baseH, onLand, makeDock, travel, curIsle, boatNear, fadeEl, toParent,
+    std, shadowy, glow, glowTex, lantern, makeBench, makeTree, rock, vlight, rnd, mulberry, smooth, clamp, lerp, ez, TAU, toast, burst, startEmote, tileGrid, boatMesh,
+    get night() { return nightF; }, get phase() { return phase; }, get fog() { return scene.fog; },
+    ticks: [], post: [], modal: 0, hint: null, act: null, key: null, ptr: null, camOv: null, live(o) { o.traverse(n => { n.userData.keep = true; }); return o; }
+  };
+  window.__XC = XC;
+  (window.IlhaExt || []).forEach(f => { try { f(XC); } catch (e) { console.error('módulo extra falhou', e); } });
+
   /* ───────── otimização da cena (feita uma vez, depois que tudo foi criado) ─────────
      1) objetos pequenos que não se mexem são agrupados em blocos de 20 m; blocos longe de você nem são desenhados;
      2) objetos minúsculos deixam de projetar sombra (ninguém vê a sombra de uma pedrinha);
@@ -1374,7 +1408,7 @@
     requestAnimationFrame(loop);
     const now = performance.now(); if (now - lastFrame < 14.5) return; lastFrame = now;
     const dt = Math.min(0.05, clock.getDelta()), t = clock.elapsedTime; U.uTime.value = t;
-    step(dt, t); dayStep(dt); wardCam(dt); camStep(dt); reactorStep(dt, t); lifeStep(dt, t); cosStep(dt, t); isleStep(dt, t); exStep(dt, t); cullStep(); lightPool(dt); cellStep();
+    step(dt, t); dayStep(dt); for (const f of XC.post) f(dt, t); wardCam(dt); camStep(dt); reactorStep(dt, t); lifeStep(dt, t); cosStep(dt, t); isleStep(dt, t); for (const f of XC.ticks) f(dt, t); exStep(dt, t); cullStep(); lightPool(dt); cellStep();
     if (hintT && t > hintT) $('hint').classList.add('off');
     renderer.shadowMap.needsUpdate = ((shFlip++) & 1) === 0;
     renderer.render(scene, camera);
@@ -1385,7 +1419,7 @@
     }
   }
   applyQ(); resize(); dayStep(0.001); camStep(1);
-  let vt = 100; window.__ilha = { merged: () => mergedCount, renderer, scene, camera, EX, exMeshes, initEx, ISLES, DOCKS, travel, curIsle, shot: () => { camStep(1); cullStep(); cellStep(); renderer.shadowMap.needsUpdate = true; renderer.render(scene, camera); }, PS, hero, THREE: T, groundH, tick: (n, dt) => { for (let i = 0; i < n; i++) { vt += dt; step(dt, vt); dayStep(dt); camStep(dt); cosStep(dt, vt); lifeStep(dt, vt); isleStep(dt, vt); exStep(dt, vt); cullStep(); lightPool(dt); cellStep(); } }, keys, P, CAM, PS, S, ITEMS, collect, toggleWard, startEmote, setPhase: p => { phase = p; }, AU };
+  let vt = 100; window.__ilha = { XC, merged: () => mergedCount, renderer, scene, camera, EX, exMeshes, initEx, ISLES, DOCKS, travel, curIsle, shot: () => { camStep(1); cullStep(); cellStep(); renderer.shadowMap.needsUpdate = true; renderer.render(scene, camera); }, PS, hero, THREE: T, groundH, tick: (n, dt) => { for (let i = 0; i < n; i++) { vt += dt; step(dt, vt); dayStep(dt); for (const f of XC.post) f(dt, vt); camStep(dt); cosStep(dt, vt); lifeStep(dt, vt); isleStep(dt, vt); for (const f of XC.ticks) f(dt, vt); exStep(dt, vt); cullStep(); lightPool(dt); cellStep(); } }, keys, P, CAM, PS, S, ITEMS, collect, toggleWard, startEmote, setPhase: p => { phase = p; }, AU };
   toParent({ nb: 'ready' });
   loop();
 })();

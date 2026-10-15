@@ -676,6 +676,8 @@ body.intro.intro-hud .brand,body.intro.intro-hud .read{opacity:0}
       <li><b>Andar:</b> WASD ou setas (joystick no celular). <b>Câmera:</b> arrastar. <b>Correr:</b> Shift. <b>Pular:</b> Espaço (segure para planar). <b>Sentar:</b> E. <b>Gestos:</b> Q e R. <b>Guarda-roupa:</b> C. <b>Hora do dia:</b> T (ou clique no relógio): dia, noite, sempre dia, sempre noite. <b>Acelerar o tempo:</b> N. <b>Barco:</b> E perto de um cais. <b>Sair:</b> Esc.</li>
       <li>Você controla a <b>Lyra</b> (visual de desenho animado). Colete presentes brilhantes para ganhar cosméticos: roupas e acessórios, enfeites da ilha e efeitos para o site (pétalas, vagalumes, borboletas, aurora, estrelas), que se ligam no botão ✦ da tela principal.</li>
       <li>No fim do caminho fica o <b>Santuário do Som</b>: cristais e luz que reagem à música. Sentar no banco vira a câmera para ele. Pela ponte e de barco você chega às outras ilhas; na ilha da árvore rosa há um banco para ficar olhando as pétalas caírem.</li>
+      <li><b>Coisas para fazer (sem pressa):</b> <b>Livro</b> (B) guarda tudo que você encontra: peixes, flores, criaturas, constelações e sons, com figura, historinha e quantos faltam. <b>Observar criaturas:</b> chegue perto e E. <b>Pescar:</b> E nos pontos brilhantes da água; quando a boia tremer, E de novo. <b>Jardim</b> na ilha principal: E planta, rega e colhe (cresce em tempo real). <b>Pedras que cantam:</b> E para guardar o som; <b>Compositor</b> (M) monta uma melodia. <b>Lanternas</b> (L) sobem ao som da música. <b>Constelações</b> (K, só de noite): ligue as estrelas. <b>Construir</b> (V): tendas, cabanas, fogueiras e mais; X remove, R gira.</li>
+      <li><b>Lugares novos de barco:</b> Ilha dos Cristais (caverna), Ilha das Cachoeiras, Ilha do Farol (suba até o topo), Vila Flutuante e a Gruta Submarina.</li>
       <li>Enquanto a ilha está aberta, o desenho das skins fica pausado para poupar a máquina.</li>
     </ul>
     <h3>Salas (jogo em grupo)</h3>
@@ -1860,6 +1862,9 @@ const cgRings=Array.from({length:24},(_,k)=>{
   let s='';for(let i=0;i<46;i++)s+=CG[(Math.random()*CG.length)|0];
   return{f,dash,s,sp:(.05+Math.random()*.22)*(k%2?1:-1),ph:Math.random()*TAU,wid:2.4+f*2.2};
 });
+const dashFor=(o,u)=>{if(o.du!==u){o.du=u;o.ds=o.dash.map(d=>d*(u/700))}return o.ds};
+const cgTxC={};const cgTx=(hb,dark)=>{const k=hb+(dark?100:0);return cgTxC[k]||(cgTxC[k]=dark?hsl(hb*6,90,66):hsl(hb*6,75,34))};
+const CONIC=typeof CanvasRenderingContext2D!=='undefined'&&!!CanvasRenderingContext2D.prototype.createConicGradient;
 const cg={p:[],bn:0,lt:-1,rev:0,acc:0},cgGl=[];
 /* g.setTransform(base · translate · rotate) sem save/restore */
 function sRT(g,B,x,y,c,s){g.setTransform(B.a*c+B.c*s,B.b*c+B.d*s,-B.a*s+B.c*c,-B.b*s+B.d*c,B.a*x+B.c*y+B.e,B.b*x+B.d*y+B.f)}
@@ -1899,24 +1904,38 @@ skin('Código','conic-gradient(from 90deg,#ff9a3d,#ff4fa0,#8a5cff,#2de2e6,#ffd23
   for(let k=0;k<cgRings.length;k++){
     const o=cgRings[k],f=o.f,r=u*(.1+f*.4)+u*.006*Math.sin(t*.7+o.ph),e=bandAt(f*.92);
     const arcs=8,lw=o.wid*(u/700)*(1+e*1.4);
-    g.lineWidth=Math.max(1,lw);g.setLineDash(o.dash.map(d=>d*(u/700)));
-    for(let s=0;s<arcs;s++){
+    g.lineWidth=Math.max(1,lw);g.setLineDash(dashFor(o,u));
+    g.lineDashOffset=-t*30*o.sp*(u/700);
+    if(CONIC){
+      /* um traço só por anel: degradê cônico com 8 cores duras (uma por arco) em vez de 8 traços tracejados */
+      const cg2=g.createConicGradient(t*o.sp,cx,cy);let c0=null,prevC=null;
+      for(let s2=0;s2<arcs;s2++){
+        const hue=(s2/arcs*330+k*7+t*8+40)%360,c=dark?hsl(hue,88,55+e*14,.28+e*.55):hsl(hue,80,38,.4+e*.45);
+        if(s2===0){cg2.addColorStop(0,c);c0=c}else{const b=s2/arcs;cg2.addColorStop(b,prevC);cg2.addColorStop(b,c)}
+        prevC=c;
+      }
+      cg2.addColorStop(1,prevC);
+      g.strokeStyle=cg2;g.beginPath();
+      const a0=t*o.sp;g.arc(cx,cy,r,a0,a0+TAU);
+      g.stroke();
+    }else for(let s=0;s<arcs;s++){
       const a0=s/arcs*TAU+t*o.sp,hue=(s/arcs*330+k*7+t*8+40)%360;
       g.strokeStyle=dark?hsl(hue,88,55+e*14,.28+e*.55):hsl(hue,80,38,.4+e*.45);
-      g.lineDashOffset=-t*30*o.sp*(u/700);
       g.beginPath();g.arc(cx,cy,r,a0,a0+TAU/arcs*.96);g.stroke();
     }
     g.setLineDash([]);
     if(k%2===0){
       const n=Math.max(8,Math.floor(TAU*r/(small*1.35))),st=o.s;
+      let lastHb=-1;g.globalAlpha=dark?Math.min(1,.35+e*.6):.5+e*.4;
       for(let i=0;i<n;i++){
         if(((i*7+k*3)%5)>2)continue;
         const a=i/n*TAU+t*o.sp*.9+o.ph;
-        const hue=(i/n*330+k*7+t*8+40)%360;
+        const hb=(Math.round((i/n*330+k*7+t*8+40)%360/6))%60;
         sRT(g,B0,cx+Math.cos(a)*r,cy+Math.sin(a)*r,-Math.sin(a),Math.cos(a));
-        g.fillStyle=dark?hsl(hue,90,66,.35+e*.6):hsl(hue,75,34,.5+e*.4);
+        if(hb!==lastHb){g.fillStyle=cgTx(hb,dark);lastHb=hb}
         g.fillText(st[(i+((t*(11+k*.7))|0))%st.length],0,0);
       }
+      g.globalAlpha=1;
     }
   }
   g.setTransform(B0);
@@ -2211,31 +2230,46 @@ skin('Holograma','conic-gradient(from 40deg,#2de2e6,#8a5cff,#ff4fd0,#7dff6a,#2de
 /* 17 · Pi — anéis de dígitos de π em cinza, com o símbolo vermelho no meio */
 const PI='31415926535897932384626433832795028841971693993751058209749445923078164062862089986280348253421170679821480865132823066470938446095505822317253594081284811174502841027019385211055596446229489549303819644288109756659334461284756482337867831652712019091';
 skin('Pi','radial-gradient(circle,#d4211c 0 12%,#1b1b1c 14% 44%,#6a6a6c 60%,#141414 90%)',(g,w,h,dark,F)=>{
-  const cx=F.cx,cy=F.cy,u=F.u,t=A.t,pulseHot=A.pulse>.5,B0=g.getTransform();
-  layer(g,'pi',t,.032,dark+'|'+(cx|0)+'|'+(cy|0)+'|'+(u|0)+'|'+w+'|'+(pulseHot?1+Math.round(A.pulse*5):0),g=>{
-  g.fillStyle=dark?'#0d0d0e':'#e9e8e4';g.fillRect(0,0,w,h);
-  const vg=g.createRadialGradient(cx,cy,u*.05,cx,cy,Math.hypot(w,h)*.5);vg.addColorStop(0,dark?'rgba(255,255,255,.04)':'rgba(255,255,255,.35)');vg.addColorStop(1,'rgba(0,0,0,.35)');
-  g.fillStyle=vg;g.fillRect(0,0,w,h);
-  const K=10,B0=g.getTransform(),col=dark?'rgb(200,200,205)':'rgb(40,40,44)';
-  g.textAlign='center';g.textBaseline='middle';
+  const cx=F.cx,cy=F.cy,u=F.u,t=A.t,pulseHot=A.pulse>.5,B0=g.getTransform(),sc=B0.a||1;
+  const bgc=dark?'#0d0d0e':'#e9e8e4';
+  /* fundo: pintado uma vez (só repinta se a tela/tema mudar) */
+  layer(g,'pibg',t,1e9,dark+'|'+(cx|0)+'|'+(cy|0)+'|'+(u|0)+'|'+w,g=>{
+    g.fillStyle=bgc;g.fillRect(0,0,w,h);
+    const vg=g.createRadialGradient(cx,cy,u*.05,cx,cy,Math.hypot(w,h)*.5);vg.addColorStop(0,dark?'rgba(255,255,255,.04)':'rgba(255,255,255,.35)');vg.addColorStop(1,'rgba(0,0,0,.35)');
+    g.fillStyle=vg;g.fillRect(0,0,w,h);
+  });
+  /* cada anel é uma imagem própria: os dígitos são desenhados num canvas à parte (~3×/s, escalonado) e o anel só é girado na tela a cada quadro */
+  const K=10,col=dark?'rgb(200,200,205)':'rgb(40,40,44)',hotLv=pulseHot?1+Math.round(A.pulse*5):0,cvs=g.canvas;
+  let M=cvs.__lay;if(!M)M=cvs.__lay={};
+  const now=performance.now();
   for(let k=0;k<K;k++){
-    const f=k/(K-1),r=u*(.13+f*.4),fs=Math.max(8,u*(.026+f*.012)),e=bandAt(f*.85),n=Math.floor(TAU*r/(fs*.82));
-    g.font=`500 ${fs}px "DM Mono",monospace`;
-    const dir=k%2?1:-1,rot=t*(.04+.01*k)*dir,off=(k*37)%PI.length;
-    const gray=dark?(.28+.5*e):(.35+.45*e);
-    let lastHot=-1;g.fillStyle=col;
-    for(let i=0;i<n;i++){
-      const a=i/n*TAU+rot,ca=Math.cos(a),sa=Math.sin(a),hot=pulseHot&&((i+k*5)%11===0);
-      if(hot!==!!lastHot){g.fillStyle=hot?'rgb(224,40,34)':col;lastHot=hot?1:0}
-      const at=hot?.5+A.pulse*.5:gray*(.55+.45*Math.sin(i*.5+t));
-      sRT(g,B0,cx+ca*r,cy+sa*r,-sa,ca);
-      g.globalAlpha=at<0?0:at>1?1:at;
-      g.fillText(PI[(off+i)%PI.length],0,0);
+    const f=k/(K-1),r=u*(.13+f*.4),fs=Math.max(8,u*(.026+f*.012)),R=r+fs,px=Math.max(8,Math.ceil(2*R*sc)),dir=k%2?1:-1;
+    let e=M['pir'+k];if(!e){e=M['pir'+k]={c:document.createElement('canvas'),sig:'',q:-9,use:0,M};LAY.add(e)}
+    const sig=dark+'|'+px+'|'+hotLv+'|'+(u|0),q=Math.floor(t/.3+k*.1);
+    if(e.sig!==sig||e.q!==q){
+      e.sig=sig;e.q=q;
+      if(e.c.width!==px){e.c.width=e.c.height=px}
+      const x=e.c.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,px,px);
+      const Bk=new DOMMatrix([sc,0,0,sc,px/2,px/2]);
+      const ee=bandAt(f*.85),n=Math.floor(TAU*r/(fs*.82)),off=(k*37)%PI.length,gray=dark?(.28+.5*ee):(.35+.45*ee);
+      x.font=`500 ${fs}px "DM Mono",monospace`;x.textAlign='center';x.textBaseline='middle';
+      let lastHot=-1;x.fillStyle=col;
+      for(let i=0;i<n;i++){
+        const a=i/n*TAU,ca=Math.cos(a),sa=Math.sin(a),hot=pulseHot&&((i+k*5)%11===0);
+        if(hot!==!!lastHot){x.fillStyle=hot?'rgb(224,40,34)':col;lastHot=hot?1:0}
+        const at=hot?.5+A.pulse*.5:gray*(.55+.45*Math.sin(i*.5+t));
+        sRT(x,Bk,ca*r,sa*r,-sa,ca);
+        x.globalAlpha=at<0?0:at>1?1:at;
+        x.fillText(PI[(off+i)%PI.length],0,0);
+      }
     }
+    e.use=now;
+    const rot=t*(.04+.01*k)*dir;
+    sRT(g,B0,cx,cy,Math.cos(rot),Math.sin(rot));g.transform(1/sc,0,0,1/sc,0,0);
+    g.drawImage(e.c,-px/2,-px/2);
   }
   g.setTransform(B0);g.globalAlpha=1;
-  g.fillStyle=dark?'#0d0d0e':'#e9e8e4';g.beginPath();g.arc(cx,cy,u*.1,0,TAU);g.fill();
-  });
+  g.fillStyle=bgc;g.beginPath();g.arc(cx,cy,u*.1,0,TAU);g.fill();
   g.textAlign='center';g.textBaseline='middle';
   const ps=u*(.13+A.bass*.02+A.pulse*.015);
   g.font=`italic 700 ${ps}px "Bricolage Grotesque",Georgia,serif`;g.fillStyle='#e0231d';g.shadowColor='rgba(224,35,29,.65)';g.shadowBlur=dark?u*.03*(.5+A.pulse):0;

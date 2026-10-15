@@ -52,7 +52,7 @@ body.touch #ward{top:58px;bottom:auto;max-height:62vh}
 <canvas id="c" tabindex="0"></canvas>
 <div class="hud" id="hTL"><button class="chip" id="bBack" type="button">← Jogos</button></div>
 <div class="hud" id="hTR"><button class="chip" id="bWard" type="button" title="Guarda-roupa (C)">✦ Guarda-roupa <b id="wCount">0/0</b></button><span class="chip" id="clock" title="Hora do dia (T)" role="button" tabindex="0"><i></i><span id="clockT">Entardecer</span></span><button class="chip" id="bQ" type="button" title="Qualidade gráfica">Qualidade: auto</button></div>
-<div id="hint" class="chip"><span class="kb">WASD mover · arraste para girar a câmera · roda do mouse: zoom · Shift correr · Espaço pular (segure no ar para planar) · E sentar · Q acenar · R girar · C guarda-roupa · T hora do dia · N acelera o tempo</span><span class="tc" style="display:none">Use o botão da esquerda para andar e arraste para girar a câmera</span></div>
+<div id="hint" class="chip"><span class="kb">WASD mover · arraste para girar a câmera · roda do mouse: zoom · Shift correr · Espaço pular (segure no ar para planar) · E sentar · Q acenar · R girar · C guarda-roupa · T hora do dia · N acelera o tempo · B livro · M compositor · L lanterna · K constelações · V construir</span><span class="tc" style="display:none">Use o botão da esquerda para andar e arraste para girar a câmera</span></div>
 <div id="tpanel"><div class="wh"><b>Hora do dia</b><button class="chip" id="tClose" type="button" aria-label="Fechar">✕</button></div><div class="g2"><button class="chip" data-m="day" type="button">Dia</button><button class="chip" data-m="night" type="button">Noite</button><button class="chip" data-m="lockDay" type="button">Sempre dia</button><button class="chip" data-m="lockNight" type="button">Sempre noite</button></div><small id="tMode"></small></div>
 <div id="prompt" class="chip"></div>
 <div id="bpanel"><div class="wh"><b>Viajar de barco</b><button class="chip" id="bClose" type="button" aria-label="Fechar">✕</button></div><div id="bList"></div></div>
@@ -65,6 +65,11 @@ body.touch #ward{top:58px;bottom:auto;max-height:62vh}
 <div id="msg">Seu navegador não conseguiu iniciar o 3D (WebGL).<br>Tente atualizar o navegador ou ativar a aceleração por hardware.</div>
 <script src="js/three.min.js"></script>
 <script src="js/GLTFLoader.js"></script>
+<script src="js/x-core.js"></script>
+<script src="js/x-places.js"></script>
+<script src="js/x-life.js"></script>
+<script src="js/x-sky.js"></script>
+<script src="js/x-build.js"></script>
 <script src="js/world.js"></script>
 </body>
 </html>
