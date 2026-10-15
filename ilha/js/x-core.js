@@ -135,7 +135,7 @@
   /* constelações (padrões em 0..1; ligar as estrelas no céu, à noite) */
   const con = (id, name, desc, pts, links, az, el) => add('sky', 'c_' + id, name, 'Céu à noite · tecla K', desc, { pts, links, az, el });
   con('lira', 'A Lira', 'Uma harpa de seis estrelas. Dizem que ela toca sozinha quando o mar está calmo.', [[.5, .1], [.28, .38], [.72, .38], [.34, .82], [.66, .82], [.5, .55]], [[0, 1], [0, 2], [1, 3], [2, 4], [3, 4], [1, 5], [2, 5]], 0.3, 0.9);
-  con('barco', 'O Barco', 'O barquinho das estrelas, sempre indo para algum lugar bonito.', [[.15, .6], [.85, .6], [.7, .84], [.3, .84], [.5, .12], [.5, .6]], [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [4, 1]], 1.2, 0.75);
+  con('barco', 'O Barco', 'O barquinho das estrelas, sempre indo para algum lugar bonito.', [[.15, .6], [.85, .6], [.7, .84], [.3, .84], [.5, .12], [.5, .4]], [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [4, 1]], 1.2, 0.75);
   con('raposa', 'A Raposa', 'Uma raposa de luz correndo pelo céu com o rabo erguido.', [[.2, .2], [.35, .42], [.5, .3], [.65, .42], [.8, .2], [.5, .62], [.5, .88]], [[0, 1], [1, 2], [2, 3], [3, 4], [1, 5], [3, 5], [5, 6]], 2.1, 0.8);
   con('peixe', 'O Peixe-lua', 'Um peixe desenhado com sete pontinhos de luz.', [[.1, .5], [.35, .3], [.65, .4], [.85, .25], [.85, .75], [.65, .6], [.35, .7]], [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 0], [2, 5]], 3.0, 0.7);
   con('arvore', 'A Árvore Milenar', 'A árvore mais antiga, agora crescendo para cima, até o céu.', [[.5, .1], [.3, .3], [.7, .3], [.2, .56], [.8, .56], [.5, .56], [.5, .92]], [[0, 1], [0, 2], [1, 3], [2, 4], [1, 5], [2, 5], [5, 6]], 3.9, 0.95);

@@ -10,7 +10,7 @@
   SP.fish.push({ biome: 'gelo', x: ISL.N.x + 7, z: ISL.N.z - 4, r: 5, y: groundH(ISL.N.x + 7, ISL.N.z - 4) + 0.05 }, { biome: 'oasis', x: ISL.D.x - 3, z: ISL.D.z + 2, r: 4.2, y: groundH(ISL.D.x - 3, ISL.D.z + 2) + 0.05 });
   SP.stone.push({ id: 'n1', x: 14, z: -20 }, { id: 'n2', x: -22, z: -6 }, { id: 'n7', x: -12, z: 24 }, { id: 'n11', x: 24, z: 16, night: true }, { id: 'n3', x: ISL.T.x - 7, z: ISL.T.z + 9 }, { id: 'n4', x: ISL.D.x + 6, z: ISL.D.z + 10 }, { id: 'n9', x: ISL.D.x - 12, z: ISL.D.z - 5 }, { id: 'n10', x: ISL.N.x - 6, z: ISL.N.z - 9 });
   SP.critter.push({ id: 'raposa', x: -20, z: 14, mode: 'walk', R: 6 }, { id: 'coelho', x: 22, z: 22, mode: 'walk', R: 7 }, { id: 'coelho', x: -26, z: -18, mode: 'walk', R: 6, dup: true },
-    { id: 'cometa', x: ISL.T.x, z: ISL.T.z + 2, mode: 'fly', R: 7, h: 7 }, { id: 'pinguim', x: ISL.N.x - 3, z: ISL.N.z + 3, mode: 'walk', R: 5 }, { id: 'lagartixa', x: ISL.D.x + 10, z: ISL.D.z - 8, mode: 'sit' },
+    { id: 'cometa', x: ISL.T.x, z: ISL.T.z + 2, mode: 'fly', R: 6, h: 3.6 }, { id: 'pinguim', x: ISL.N.x - 3, z: ISL.N.z + 3, mode: 'walk', R: 5 }, { id: 'lagartixa', x: ISL.D.x + 10, z: ISL.D.z - 8, mode: 'sit' },
     { id: 'caranguejo', x: 40, z: 22, mode: 'walk', R: 3 }, { id: 'caranguejo', x: ISL.D.x + 18, z: ISL.D.z + 10, mode: 'walk', R: 3, dup: true }, { id: 'caranguejo', x: ISL.W.x - 14, z: ISL.W.z + 12, mode: 'walk', R: 3, dup: true });
 
   /* ───────── criaturas (figurinhas que andam, voam ou flutuam) ───────── */
@@ -34,19 +34,19 @@
   }
   let seenNear = null;
   XC.ticks.push((dt, t) => {
-    seenNear = null; let bd = 4.4; camera.getWorldDirection(camR); const rx = -camR.z, rz = camR.x;
+    seenNear = null; let bd = 99; camera.getWorldDirection(camR); const rx = -camR.z, rz = camR.x;
     for (const c of crit) {
       const s = c.s, dd = dist(s.x, s.z), vis = dd < 85 && (!s.night || nightNow() > 0.35);
       if (c.m.visible !== vis) c.m.visible = vis; if (!vis) continue;
       let vx = 0, vz = 0;
       if (s.mode === 'walk') { c.wait -= dt; if (c.wait <= 0) { const a = rnd() * TAU, r = rnd() * s.R; c.tx = s.x + Math.cos(a) * r; c.tz = s.z + Math.sin(a) * r; if (groundH(c.tx, c.tz) < 0.5 && s.y === undefined) { c.tx = s.x; c.tz = s.z; } c.wait = 2 + rnd() * 4; } const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz); if (d > 0.15) { vx = dx / d * 0.9; vz = dz / d * 0.9; c.x += vx * dt; c.z += vz * dt; c.hop = c.hop > 0 ? c.hop : 0.001; c.hop += dt; } else c.hop = 0; if (c.hop > 0 && c.hop > 1e3) c.hop = 0; }
-      else if (s.mode === 'fly' || s.mode === 'float' || s.mode === 'swim') { const w = s.mode === 'fly' ? 0.55 : s.mode === 'swim' ? 0.18 : 0.12; c.a += dt * w; const ox = c.x, oz = c.z; c.x = s.x + Math.cos(c.a) * s.R; c.z = s.z + Math.sin(c.a) * s.R * (s.mode === 'float' ? 0.7 : 1); vx = (c.x - ox) / Math.max(dt, 1e-3); vz = (c.z - oz) / Math.max(dt, 1e-3); }
+      else if (s.mode === 'fly' || s.mode === 'float' || s.mode === 'swim') { const near = Math.hypot(P.x - c.x, P.z - c.z) < 9, w = s.mode === 'fly' ? (1.6 / s.R) * (near ? 0.3 : 1) : s.mode === 'swim' ? 0.18 : 0.12; c.a += dt * w; const ox = c.x, oz = c.z; c.x = s.x + Math.cos(c.a) * s.R; c.z = s.z + Math.sin(c.a) * s.R * (s.mode === 'float' ? 0.7 : 1); vx = (c.x - ox) / Math.max(dt, 1e-3); vz = (c.z - oz) / Math.max(dt, 1e-3); }
       else { if (c.hop > 0) c.hop += dt; if (c.hop > 1.4) c.hop = 0; }
       if (c.hopNow > 0) { c.hopNow -= dt; c.hop += dt * 2; if (c.hopNow <= 0) c.hop = 0; }
       c.m.position.set(c.x, critY(c, t), c.z);
       const side = vx * rx + vz * rz; if (Math.abs(side) > 0.05) c.dir = side > 0 ? -1 : 1; c.m.scale.x = Math.abs(c.m.scale.x) * c.dir;
       if (s.mode === 'float') c.m.material.opacity = 0.82 + 0.18 * Math.sin(t * 2 + c.ph);
-      const dn = Math.hypot(P.x - c.x, P.z - c.z); if (dn < bd && Math.abs(P.y - (c.m.position.y - c.sz * 0.2)) < 5) { bd = dn; seenNear = c; }
+      const dn = Math.hypot(P.x - c.x, P.z - c.z); if (dn < (s.mode === 'fly' ? 6.5 : 4.4) && dn < bd && Math.abs(P.y - (c.m.position.y - c.sz * 0.2)) < (s.mode === 'fly' ? 14 : 5)) { bd = dn; seenNear = c; }
     }
   });
   function observe(c) {

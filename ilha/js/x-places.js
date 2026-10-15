@@ -52,10 +52,14 @@
     const rings = []; for (let i = 0; i < 2; i++) { const r = new T.Mesh(new T.RingGeometry(3.6 + i * 1.5, 3.74 + i * 1.5, 56), new T.MeshBasicMaterial({ color: 0xc9a6ff, transparent: true, opacity: 0.6, blending: T.AdditiveBlending, depthWrite: false, side: T.DoubleSide, toneMapped: false })); r.rotation.x = -Math.PI / 2; r.position.set(cx, gy + 0.05, cz); scene.add(r); rings.push(r); }
     const cl = new T.PointLight(0xc9a6ff, 0, 24, 1.5); cl.position.set(cx, gy + 3.2, cz); scene.add(cl); XC.vlight(cl);
     /* lagoa de cristal do lado de fora */
-    const px = cx + 11, pz = cz - 12, pond = new T.Mesh(new T.CylinderGeometry(4.2, 4.2, 0.06, 32), new T.MeshStandardMaterial({ color: '#8fd8ff', roughness: 0.1, metalness: 0.2, emissive: new T.Color('#6a8cff'), emissiveIntensity: 0.18, transparent: true, opacity: 0.9 })); pond.position.set(px, Math.max(groundH(px, pz), 0.5) + 0.05, pz); scene.add(pond);
-    SP.fish.push({ biome: 'cristal', x: px, z: pz, r: 4.2, y: pond.position.y });
+    let px = cx + 11, pz = cz - 12, bestRg = 1e9, pTop = 0.6;
+    const rangeAt = (x, z) => { let lo = 1e9, hi = -1e9; for (let k = 0; k < 14; k++) { const q = k < 13 ? k / 13 * TAU : 0, rr = k < 13 ? 4.4 : 0, h = groundH(x + Math.cos(q) * rr, z + Math.sin(q) * rr); lo = Math.min(lo, h); hi = Math.max(hi, h); } return [lo, hi]; };
+    for (let ia = 0; ia < 28; ia++) for (let rr = 13; rr <= 19; rr += 2) { const a2 = ia / 28 * TAU, x = cx + Math.cos(a2) * rr, z = cz + Math.sin(a2) * rr; if (Math.abs(wrapA(a2 - eA)) < 0.7) continue; const [lo, hi] = rangeAt(x, z); if (lo < 0.5) continue; if (hi - lo < bestRg) { bestRg = hi - lo; px = x; pz = z; pTop = hi; } }
+    const pondM = [new T.MeshStandardMaterial({ color: '#2c5a78', roughness: 0.8 }), new T.MeshStandardMaterial({ color: '#8fd8ff', roughness: 0.1, metalness: 0.2, emissive: new T.Color('#6a8cff'), emissiveIntensity: 0.18 }), new T.MeshStandardMaterial({ color: '#2c5a78' })];
+    const pond = new T.Mesh(new T.CylinderGeometry(4.2, 4.2, 1.6, 32), pondM); pond.position.set(px, pTop + 0.05 - 0.8, pz); scene.add(pond); pond.position.y += 0; const pondTop = pTop + 0.05;
+    SP.fish.push({ biome: 'cristal', x: px, z: pz, r: 4.2, y: pondTop });
     SP.stone.push({ id: 'n8', x: cx + 4.2, z: cz - 3.2 });
-    SP.critter.push({ id: 'morcego', x: cx, z: cz, mode: 'fly', R: 6.5, h: 4.5, night: true });
+    SP.critter.push({ id: 'morcego', x: cx, z: cz, mode: 'fly', R: 6.5, h: 3.4, night: true });
     for (let k = 0, tr = 0; k < 10 && tr < 200; tr++) { const a = rnd() * TAU, r = 13 + rnd() * 9, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (groundH(x, z) < 0.6 || Math.hypot(x - px, z - pz) < 6) continue; XC.rock(x, z, 0.6 + rnd() * 1.1); k++; }
     XC.lantern(cx + Math.cos(eA) * 13.6 - Math.sin(eA) * 2.4, cz + Math.sin(eA) * 13.6 + Math.cos(eA) * 2.4, 2.3); XC.lantern(cx + Math.cos(eA) * 13.6 + Math.sin(eA) * 2.4, cz + Math.sin(eA) * 13.6 - Math.cos(eA) * 2.4, 2.3);
     gate([dome, ...ims, big, halo, ...rings, pond], cx, cz, 170);
@@ -171,12 +175,14 @@
     for (let i = 0; i < 3; i++) { const a = eD + 0.5 + i * 0.35, x = cx + Math.cos(a) * 4.6, z = cz + Math.sin(a) * 4.6, c = shadowy(new T.Mesh(new T.BoxGeometry(0.8, 0.8, 0.8), wood)); c.position.set(x, groundH(x, z) + 0.4, z); c.rotation.y = i; scene.add(c); colliders.push({ x, z, r: 0.55 }); }
     for (let k = 0, tr = 0; k < 22 && tr < 400; tr++) { const a = rnd() * TAU, r = 6 + rnd() * 9, x = cx + Math.cos(a) * r, z = cz + Math.sin(a) * r; if (!XC.onLand(Is, x, z, 0.8) || Math.abs(wrapA(a - eD)) < 0.35) continue; if (k % 3) { const b = shadowy(new T.Mesh(new T.IcosahedronGeometry(0.5 + rnd() * 0.4, 1), std(['#7ed39a', '#9be08a', '#a8e3b0'][k % 3], 1))); b.position.set(x, groundH(x, z) + 0.25, z); b.scale.y = 0.7; scene.add(b); } else XC.rock(x, z, 0.7 + rnd()); k++; }
     XC.lantern(cx + Math.cos(eD + 0.9) * 5.4, cz + Math.sin(eD + 0.9) * 5.4, 2.3); XC.lantern(cx + Math.cos(eD - 0.9) * 5.4, cz + Math.sin(eD - 0.9) * 5.4, 2.3);
-    { const bx = cx + Math.cos(eD + 1.9) * 7.2, bz = cz + Math.sin(eD + 1.9) * 7.2; XC.makeBench(bx, bz, Math.atan2(cx - 20 * Math.cos(eD) - bx, cz - 20 * Math.sin(eD) - bz), cx, cz); }
+    { const bx = cx + Math.cos(eD + 1.9) * 7.2, bz = cz + Math.sin(eD + 1.9) * 7.2, B = XC.makeBench(bx, bz, Math.atan2(cx - 20 * Math.cos(eD) - bx, cz - 20 * Math.sin(eD) - bz), cx, cz); B.ty = 7.5; B.pitch = 0.1; B.zoom = 1.5; }
     SP.critter.push({ id: 'gato', x: cx + Math.cos(eD + 0.25) * 4.4, z: cz + Math.sin(eD + 0.25) * 4.4, mode: 'sit' }); SP.stone.push({ id: 'n6', x: cx + Math.cos(eD + 2.6) * 9, z: cz + Math.sin(eD + 2.6) * 9 });
     /* subir e descer */
+    let lhLock = 0;
     const doorX = cx + Math.cos(eD) * 4.0, doorZ = cz + Math.sin(eD) * 4.0, hatX = cx + Math.cos(eD) * 3.7, hatZ = cz + Math.sin(eD) * 3.7;
     XC.addAct(() => (!P.sit && P.y < 8 && Math.hypot(P.x - doorX, P.z - doorZ) < 3.4) ? 'E · subir ao farol' : (P.y > 12 && Math.hypot(P.x - hatX, P.z - hatZ) < 2.6 ? 'E · descer' : ''), () => {
-      if (P.y > 12) { XC.warp(doorX, doorZ, groundH(doorX, doorZ), eD, 'Descendo…'); } else XC.warp(hatX, hatZ, topY + 0.2, eD + Math.PI, 'Subindo…', () => { XC.toast('Vista do alto do farol', 'Gire a câmera para ver o mar inteiro. Perto da escada, E para descer.'); });
+      if (performance.now() < lhLock) return true; lhLock = performance.now() + 2200;
+      if (P.y > 12) { const dx2 = cx + Math.cos(eD) * 8.2, dz2 = cz + Math.sin(eD) * 8.2; XC.warp(dx2, dz2, XC.isleH(Is, dx2, dz2) + 0.05, eD, 'Descendo…', () => { P.y = XC.isleH(Is, dx2, dz2) + 0.05; P.vy = 0; P.ground = true; }); } else XC.warp(hatX, hatZ, topY + 0.2, eD + Math.PI, 'Subindo…', () => { XC.toast('Vista do alto do farol', 'Gire a câmera para ver o mar inteiro. Perto da escada, E para descer.'); });
       return true;
     });
     gate([tw, beams, lh, flag, pole], cx, cz, 190);

@@ -19,6 +19,7 @@
   const placed = [];
   function spawn(d) { const def = BY[d.k]; if (!def) return null; const g = def.build(); g.position.set(d.x, d.y, d.z); g.rotation.y = d.r || 0; XC.shadowy ? g.traverse(n => { if (n.isMesh && n.material && !n.material.isMeshBasicMaterial) { n.castShadow = true; n.receiveShadow = true; } }) : 0; scene.add(XC.live(g)); const col = { x: d.x, z: d.z, r: def.r * 0.8, y0: d.y - 2, y1: d.y + 4 }; colliders.push(col); const o = { d, def, g, col }; placed.push(o); return o; }
   sv.bl.forEach(d => spawn(d));
+  XC.build = { placed };
   /* animação: chamas, poste, notinha */
   XC.ticks.push((dt, t) => {
     for (const o of placed) { const v = Math.hypot(P.x - o.d.x, P.z - o.d.z) < 110; if (o.g.visible !== v) o.g.visible = v; }
@@ -28,7 +29,7 @@
   const css = document.createElement('style'); css.textContent = '#bdp{left:50%;bottom:14px;transform:translateX(-50%);width:min(520px,calc(100vw - 20px));padding:10px 12px}#bdp .row .chip{padding:7px 9px;font-size:11px}#bdp .row .chip i{font-style:normal;opacity:.55;font-size:10px}'; document.head.appendChild(css);
   const pn = document.createElement('div'); pn.className = 'xpanel'; pn.id = 'bdp'; pn.innerHTML = '<div class="wh"><b>Construir</b><span><small id="bdC"></small> <button class="chip" type="button" id="bdX">Sair</button></span></div><div class="row" id="bdR"></div><small id="bdD"></small><div class="row"><button class="chip" type="button" id="bdPut">Colocar (E)</button><button class="chip" type="button" id="bdRot">Girar (R)</button><button class="chip" type="button" id="bdDel">Remover o mais perto (X)</button></div>'; document.body.appendChild(pn);
   let on = false, sel = 0, rot = 0, ghost = null, gOk = false, gx = 0, gz = 0, gy = 0;
-  function mkGhost() { if (ghost) { scene.remove(ghost); ghost = null; } const g = BY[PIECES[sel].id].build(); g.traverse(n => { if (n.material) { n.material = n.material.clone(); n.material.transparent = true; n.material.opacity = 0.55; n.material.depthWrite = false; } n.castShadow = false; }); g.visible = false; scene.add(g); ghost = g; ghost.userData.ghost = 1; ghostR = PIECES[sel].r; }
+  function mkGhost() { if (ghost) { ghost.removeFromParent(); ghost = null; } const g = BY[PIECES[sel].id].build(); g.traverse(n => { if (n.material) { n.material = n.material.clone(); n.material.transparent = true; n.material.opacity = 0.55; n.material.depthWrite = false; } n.castShadow = false; }); g.visible = false; scene.add(g); ghost = g; ghost.userData.ghost = 1; ghostR = PIECES[sel].r; }
   let ghostR = 1;
   function tint() { if (!ghost) return; ghost.traverse(n => { if (n.material && n.material.color && !n.material.isSpriteMaterial) { n.material.emissive && n.material.emissive.set(gOk ? '#1a6a3a' : '#7a1a1a'); if (n.material.emissive) n.material.emissiveIntensity = 0.7; } }); }
   function drawPanel() {
@@ -41,9 +42,9 @@
     const ok = valid(gx, gz, gy, ghostR); if (ok !== gOk) { gOk = ok; tint(); } ghost.visible = true; ghost.position.set(gx, gy, gz); ghost.rotation.y = rot; if (gOk === undefined) tint();
   });
   function enter() { if (on || XC.modal) return; on = true; mkGhost(); gOk = !valid(0, 0, 0, 1) ? true : false; tint(); drawPanel(); pn.style.display = 'flex'; if (XC.tools.bd) XC.tools.bd.classList.add('on'); XC.toast('Modo construir', 'Escolha a peça, ande até o lugar e aperte E. R gira, X remove.'); }
-  function leave() { if (!on) return; on = false; if (ghost) { scene.remove(ghost); ghost = null; } pn.style.display = 'none'; if (XC.tools.bd) XC.tools.bd.classList.remove('on'); }
+  function leave() { if (!on) return; on = false; if (ghost) { ghost.removeFromParent(); ghost = null; } pn.style.display = 'none'; if (XC.tools.bd) XC.tools.bd.classList.remove('on'); }
   function put() { if (!on) return false; if (!gOk) { XC.toast('Aqui não dá', placed.length >= MAX ? 'Você já usou todas as ' + MAX + ' peças.' : 'Precisa ser terra firme e sem nada no caminho.'); return true; } const d = { k: PIECES[sel].id, x: gx, y: gy, z: gz, r: rot }; sv.bl.push(d); spawn(d); XC.save(); XC.snd.note(392, 'marimba', 0.5); XC.burst(gx, gy + 0.6, gz, 0xffe28a); drawPanel(); return true; }
-  function del() { let b = null, bd = 4.2; for (const o of placed) { const q = Math.hypot(P.x - o.d.x, P.z - o.d.z); if (q < bd) { bd = q; b = o; } } if (!b) { XC.toast('Nada por perto', 'Chegue perto da peça que quer tirar.'); return; } scene.remove(b.g); colliders.splice(colliders.indexOf(b.col), 1); placed.splice(placed.indexOf(b), 1); sv.bl.splice(sv.bl.indexOf(b.d), 1); XC.save(); XC.snd.note(220, 'pluck', 0.4); drawPanel(); }
+  function del() { let b = null, bd = 4.2; for (const o of placed) { const q = Math.hypot(P.x - o.d.x, P.z - o.d.z); if (q < bd) { bd = q; b = o; } } if (!b) { XC.toast('Nada por perto', 'Chegue perto da peça que quer tirar.'); return; } b.g.removeFromParent(); colliders.splice(colliders.indexOf(b.col), 1); placed.splice(placed.indexOf(b), 1); sv.bl.splice(sv.bl.indexOf(b.d), 1); XC.save(); XC.snd.note(220, 'pluck', 0.4); drawPanel(); }
   $('bdX').addEventListener('click', leave); $('bdPut').addEventListener('click', put); $('bdRot').addEventListener('click', () => { rot += Math.PI / 4; }); $('bdDel').addEventListener('click', del); pn.addEventListener('pointerdown', e => e.stopPropagation());
   XC.onKey((k, e) => {
     if (on) { if (k === 'escape' || k === 'v') { leave(); return true; } if (k >= '1' && k <= '6') { sel = +k - 1; mkGhost(); drawPanel(); return true; } if (k === 'r' && !e.repeat) { rot += Math.PI / 4; return true; } if (k === 'x' && !e.repeat) { del(); return true; } return false; }
