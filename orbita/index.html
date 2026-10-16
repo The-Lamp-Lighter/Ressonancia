@@ -713,6 +713,7 @@ function logic(dt){
   if(room.alt)for(const a of room.alt){const ax=a.x*T+16,ay=15*T-40;
     if(near(ax,ay,50)){G.info=[ax,ay-50,a.w];ip(ax,ay,()=>{equip(a.w);sfx('weapon');G.pref=a.w.k;room.alt=[];G.toast='Equipou: '+a.w.n;G.tt=3;burst(ax,ay,40,200,260,.8,0)},50)}}
   if(room.boss&&!room.bossDown&&!room.intro&&!G.kc&&!G.bi){if(p.x>2.2*T&&!room.gl){room.gl=1;lk();sfx('lock')}if(p.x>13*T&&p.vy==0){room.intro=1;startIntro()}}
+  if(room.boss&&room.bossDown&&room.ex.r&&!room.gr&&!G.kc){const a=room.ex.r,X=GW*T;for(let k=dt*50;k>0;k--)if(k>=1||Math.random()<k){const o=Math.random()<.7?-1:1;P.push({x:X-4+Math.random()*10,y:(a[0]+Math.random()*(a[1]-a[0]+1))*T,vx:o*(30+Math.random()*110),vy:-8-Math.random()*40,l:1.4+Math.random()*1.2,m:2.6,h:42+Math.random()*10,g:-14,r:1+Math.random()*2.2})}}
   if(room.door)ip(room.gw*T/2,15*T-20,()=>{G.door={t:0,x:room.gw*T/2-10,al:1,sc:1,tu:0,lt:0};sfx('doorhum');setMusic('V',1.2)},50);
   if(G.say){G.say.t-=dt;if(Math.hypot(p.x-G.say.x,p.y-G.say.y)>220)G.say.t=0}
   for(const o of room.pr)if(o.t=='echo')ip(o.x,o.y-30,()=>{sfx('chime');G.say={x:o.x,y:o.y-62,txt:o.lore[o.i++%o.lore.length],t:6}},46);
@@ -882,6 +883,12 @@ function drawE(e){
 function objs(){
   const t=G.time;
   for(const [s,c] of[['l',0],['r',GW*T-12]])if(room.ex[s]&&(s=='l'?room.gl:room.gr)){const a=room.ex[s];ctx.fillStyle=`hsla(${room.h},100%,70%,${.45+.2*Math.sin(t*6)})`;ctx.shadowColor=`hsl(${room.h},100%,60%)`;ctx.shadowBlur=14;ctx.fillRect(c,a[0]*T,12,(a[1]-a[0]+1)*T);ctx.shadowBlur=0}
+  if(room.boss&&room.bossDown&&room.ex.r&&!room.gr){const a=room.ex.r,X=GW*T,cy=(a[0]+a[1]+1)/2*T,hh=(a[1]-a[0]+1)*T,pu=.82+.18*Math.sin(t*2.4);
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.translate(X,cy);ctx.save();ctx.scale(1.7,1);
+    let g=ctx.createRadialGradient(0,0,0,0,0,230);g.addColorStop(0,`rgba(255,226,130,${.6*pu})`);g.addColorStop(.35,`rgba(255,196,70,${.26*pu})`);g.addColorStop(1,'rgba(255,170,40,0)');ctx.fillStyle=g;ctx.fillRect(-230,-230,460,460);ctx.restore();
+    g=ctx.createLinearGradient(-190,0,110,0);g.addColorStop(0,'rgba(255,215,110,0)');g.addColorStop(.63,`rgba(255,240,175,${.5*pu})`);g.addColorStop(1,'rgba(255,215,110,0)');ctx.fillStyle=g;ctx.fillRect(-190,-hh/2,300,hh);
+    for(let k=0;k<4;k++){const w=14+k*9,l=120+k*60+Math.sin(t*1.3+k)*18;g=ctx.createLinearGradient(0,0,-l,0);g.addColorStop(0,`rgba(255,225,140,${.16*pu})`);g.addColorStop(1,'rgba(255,225,140,0)');ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(0,-hh/2+k*6);ctx.lineTo(-l,-hh/2+(k-1.5)*w*1.4);ctx.lineTo(-l,-hh/2+(k-1.5)*w*1.4+w);ctx.lineTo(0,-hh/2+k*6+hh*.25);ctx.fill()}
+    ctx.restore()}
   if(room.book){const x=room.book[0]*T,b=Math.sin(t*2)*2;ped(x);ctx.fillStyle='#f3e9d2';ctx.beginPath();ctx.roundRect(x+5,15*T-36+b,22,12,2);ctx.fill();ctx.fillStyle='#a58b5a';ctx.fillRect(x+15,15*T-36+b,2,12)}
   if(room.alt)for(const a of room.alt){ped(a.x*T);ctx.save();ctx.translate(a.x*T+16,15*T-44+Math.sin(t*2+a.x)*3);wi(a.w);ctx.restore()}
   if(room.cp)orb(room.cp[0]*T+16,room.cp[1]*T+8,G.cp==room.i?45:185,t*.8);
@@ -1069,10 +1076,10 @@ function rock(){
   ctx.fillRect(-B,-B,B,B);ctx.fillRect(X,-B,B,B);ctx.fillRect(-B,Y,B,B);ctx.fillRect(X,Y,B,B);
   const tun=(x,y,w,hh,dx,dy)=>{const lg=ctx.createLinearGradient(x,y,x+dx,y+dy);lg.addColorStop(0,`hsla(${h},65%,11%,0)`);lg.addColorStop(1,`hsl(${h},65%,11%)`);ctx.fillStyle=lg;ctx.fillRect(x,y,w,hh);ctx.fillStyle=d.pt};
   const runs=(n,at,fn)=>{let i=0;while(i<n){const v=at(i)===1;let j=i;while(j<n&&(at(j)===1)===v)j++;fn(i,j,v);i=j}};
-  runs(GW,i=>g[i],(a,b,v)=>{if(v)ctx.fillRect(a*T,-B,(b-a)*T,B);else{ctx.fillRect(a*T,-B,(b-a)*T,B-CL);tun(a*T,-CL,(b-a)*T,CL,0,-CL)}});
-  runs(GW,i=>g[(GH-1)*GW+i],(a,b,v)=>{if(v)ctx.fillRect(a*T,Y,(b-a)*T,B);else{ctx.fillRect(a*T,Y+CL,(b-a)*T,B);tun(a*T,Y,(b-a)*T,CL,0,CL)}});
-  runs(GH,j=>g[j*GW],(a,b,v)=>{if(v)ctx.fillRect(-B,a*T,B,(b-a)*T);else{ctx.fillRect(-B,a*T,B-CL,(b-a)*T);tun(-CL,a*T,CL,(b-a)*T,-CL,0)}});
-  runs(GH,j=>g[j*GW+GW-1],(a,b,v)=>{if(v)ctx.fillRect(X,a*T,B,(b-a)*T);else{ctx.fillRect(X+CL,a*T,B,(b-a)*T);tun(X,a*T,CL,(b-a)*T,CL,0)}});
+  runs(GW,i=>g[i],(a,b,v)=>{if(v)ctx.fillRect(a*T,-B,(b-a)*T,B)});
+  runs(GW,i=>g[(GH-1)*GW+i],(a,b,v)=>{if(v)ctx.fillRect(a*T,Y,(b-a)*T,B)});
+  runs(GH,j=>g[j*GW],(a,b,v)=>{if(v)ctx.fillRect(-B,a*T,B,(b-a)*T)});
+  runs(GH,j=>g[j*GW+GW-1],(a,b,v)=>{if(v)ctx.fillRect(X,a*T,B,(b-a)*T)});
 }
 let vig;
 function draw(){
