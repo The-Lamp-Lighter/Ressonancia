@@ -310,6 +310,7 @@ code{font:500 15px/1 var(--mono);letter-spacing:.2em}
 #nbStage{position:fixed;z-index:12;border-radius:18px;border:1px solid var(--line);background:var(--veil-a);overflow:hidden;
   backdrop-filter:blur(7px) saturate(1.1);-webkit-backdrop-filter:blur(7px) saturate(1.1);animation:mIn .25s ease}
 #nbStage[hidden]{display:none}
+.dock{transition:opacity .3s}body.orbG .dock{opacity:0;pointer-events:none}
 #nbStage.noblur{backdrop-filter:none;-webkit-backdrop-filter:none}
 #nbStage.solid{background:#0b1030;backdrop-filter:none;-webkit-backdrop-filter:none}
 #nbFrame{width:100%;height:100%;border:0;display:block;background:transparent}
@@ -2970,6 +2971,7 @@ function frame(ts){
   F.cx=w/2;F.cy=h/2-cyShift;F.u=Math.min(vw,vh-cyShift*1.25)*.98;F.dt=dt;
   /* com o Neon Breach aberto o fundo fica atrás de um vidro desfocado: desenha em baixa resolução (o navegador suaviza ao esticar) e dispensa o desfoque caro do CSS */
   const wantGlass=NBG.open&&(NBG.id==='nb'||NBG.id==='orbita');if(wantGlass!==glass){glass=wantGlass;$('#nbStage').classList.toggle('noblur',glass);applyScale()}
+  document.body.classList.toggle('orbG',NBG.open&&NBG.id==='orbita');
   if(NBG.open&&NBG.id==='ilha')window.nbAudio();
   else{
     rdt+=dt;
